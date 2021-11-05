@@ -4,14 +4,14 @@ main:
     url: /publications/
 
   - title: "Research"
-    url: /research/    
+    url: /talks/    
 
   - title: "Awards"
-    url: /awards/    
+    url: /teaching/    
     
   - title: "Work experience"
-    url: /work/
+    url: /posts/
         
   - title: "Activities"
-    url: /activities/
+    url: /portfolio/
 

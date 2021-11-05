@@ -4,7 +4,7 @@ collection: publications
 permalink: /publication/INCLUDE
 excerpt: 'INCLUDE is the first Isolated Indian Sign Language Video Dataset'
 date: 2020-10-12
-venue: 'ACM MultiMedia 2020'
+venue: 'ACM MultiMedia'
 paperurl: 'https://dl.acm.org/doi/10.1145/3394171.3413528'
 citation: 
 ---
