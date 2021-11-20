@@ -1,6 +1,6 @@
 ---
-title: "Author"
-excerpt: "Preparing for Product Interviews<br/><img src='../images/Book.png'>"
+title: "Author - Preparing for Product Interviews"
+excerpt: "I co-authored a book to help students and professionals switch into Product Management roles. Its available on all major e-commerce platforms in India.<br/><img src='../images/Book.png' width="200" height="150">"
 collection: portfolio
 ---
 
