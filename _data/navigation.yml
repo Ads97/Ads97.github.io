@@ -7,11 +7,11 @@ main:
     url: /research/    
 
   - title: "Awards"
-    url: /teaching/    
+    url: /awards/    
     
   - title: "Work experience"
     url: /posts/
         
   - title: "Activities"
-    url: /portfolio/
+    url: /activities/
 
