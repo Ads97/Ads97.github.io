@@ -8,19 +8,12 @@ redirect_from:
   - /about.html
 ---
 
-Hi, and welcome to my personal website. Here's a brief summary of the things I've done (you can find these through the top nav bar as well)
+Hey, welcome to my personal website. Here's a brief summary of who I am:
+- I'm a Product Manager at Turing, where i lead efforts on matching developers with their dream jobs in an automated manner. I'm also the project lead of the Accessibility Division at [AI4Bharat](https://ai4bharat.org/), where I am advised by [Prof. Pratyush Kumar](http://www.cse.iitm.ac.in/~pratyush/)
+- I'm passioate about using using machine learning to tackle social problems
+- I completed my Bachelors Degree in Electrical Engineering from [Indian Institute of Technology Madras](https://www.iitm.ac.in/) where I was the Best Outgoing Student of my batch 
+- In my leisure time, I enjoy reading science fiction and playing Assassin's Creed
 
-Awards
-======
-
-Research
-======
-
-Work Experience
-======
-
-Other Activities
-======
 
 <!---
 Site-wide configuration
