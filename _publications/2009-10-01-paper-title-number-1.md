@@ -2,7 +2,7 @@
 title: "INCLUDE: A Large Scale Dataset for Indian Sign Language Recognition"
 collection: publications
 permalink: /publication/INCLUDE
-excerpt: 'INCLUDE is the first Isolated Sign Language Video Dataset for Indian Sign Language. In this paper, we published the INCLUDE dataset, as well as sign language recognition models that achieved a 94.5% accuracy on INCLUDE-50 (a subset of INCLUDE), and 85.6% accuracy on INCLUDE.'
+excerpt: 'INCLUDE is the first Isolated Sign Language Video Dataset for Indian Sign Language (ISL). In this paper, we published the INCLUDE dataset, which consists of 4287 videos across 263 ISL signs. We also published sign language recognition models that achieved a 94.5% accuracy on INCLUDE-50 (a subset of INCLUDE), and 85.6% accuracy on INCLUDE.'
 date: 2020-10-12
 venue: 'ACM MultiMedia'
 paperurl: 'https://dl.acm.org/doi/10.1145/3394171.3413528'
