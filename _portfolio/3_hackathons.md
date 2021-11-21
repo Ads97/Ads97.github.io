@@ -1,6 +1,6 @@
 ---
 title: "Hackathons"
-excerpt: "Hackathons at Bayern Munchen FC, India's first hackathon for the visually impaired"
+excerpt: "Attended hackathons at Bayern Munchen FC, and organised India's first hackathon for the visually impaired"
 collection: portfolio
 ---
 <!--<br/><img src='../images/DramaticsPicture.jpg' width="300" height="150">-->
