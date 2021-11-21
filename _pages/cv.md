@@ -1,10 +1,13 @@
 ---
 layout: archive
-title: "CV"
+title: "Work Experience"
 permalink: /experience/
 author_profile: true
 ---
-
+  <ul>{% for post in site.experience %}
+    {% include archive-single-cv.html %}
+  {% endfor %}</ul>
+<!---
 {% include base_path %}
 
 Education
@@ -40,4 +43,6 @@ Activities
   <ul>{% for post in site.portfolio %}
     {% include archive-single-cv.html %}
   {% endfor %}</ul>
+
+-->
 
