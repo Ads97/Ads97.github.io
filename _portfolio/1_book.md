@@ -1,9 +1,9 @@
 ---
 title: "Author - Preparing for Product Interviews"
-excerpt: "I co-authored a book to help students and professionals switch into Product Management roles. Its available on all major e-commerce platforms in India.<br/><img src='../images/Book.png' width="200" height="150">"
+excerpt: "I co-authored a book to help students and professionals switch into Product Management roles. Its available on all major e-commerce platforms in India.
 collection: portfolio
 ---
-
+<img src='../images/Book.png' width="200" height="150">"
 I co-authored a book to help students and professionals switch into Product Management roles. It is available on [Amazon](https://www.amazon.in/dp/B07X1PKQBS), [Flipkart](https://www.flipkart.com/preparing-product-interviews-product-ive-guide-landing-job-pm/p/itm41e592b581ae2?pid=9789389097559&lid=LSTBOK9789389097559FICBVM&marketplace=FLIPKART&srno=s_1_1&otracker=search&otracker1=search&fm=SEARCH&iid=1e2fc6f2-3fd6-4791-8f99-c5fa91dd5f44.9789389097559.SEARCH&ppt=sp&ppn=sp&ssid=obdq51a0eo0000001568350608926&qH=fc40bf0d02f8c4ab), [Google Play](https://play.google.com/store/books/details/Advaith_Sridhar_Preparing_for_Product_Interviews_A?id=NE6rDwAAQBAJ) and [Apple Books](https://books.apple.com/us/book/id1477950721). The book is free for students, and has been downloaded over 4,000 times on various forums by students and professionals alike.
 
 User feedback on the book (verbatim):
