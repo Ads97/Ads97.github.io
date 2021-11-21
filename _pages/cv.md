@@ -4,9 +4,9 @@ title: "Work Experience"
 permalink: /experience/
 author_profile: true
 ---
-  <ul>{% for post in site.experience %}
+  {% for post in site.experience %}
     {% include archive-single-cv.html %}
-  {% endfor %}</ul>
+  {% endfor %}
 <!---
 {% include base_path %}
 

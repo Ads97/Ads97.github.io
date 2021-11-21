@@ -175,7 +175,7 @@ kramdown:
 
 # Collections
 collections:
-  teaching:
+  awards:
     output: true
     permalink: /:collection/:path/
   publications:
@@ -194,7 +194,7 @@ defaults:
   # _posts
   - scope:
       path: ""
-      type: posts
+      type: experience
     values:
       layout: single
       author_profile: true
