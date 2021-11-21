@@ -1,9 +1,9 @@
 ---
 title: "Hackathons"
-excerpt: "Hackathons at Bayern Munchen FC, India's first hackathon for the visually impaired <br/><img src='../images/DramaticsPicture.jpg' width="300" height="150">"
+excerpt: "Hackathons at Bayern Munchen FC, India's first hackathon for the visually impaired"
 collection: portfolio
 ---
-
+<!--<br/><img src='../images/DramaticsPicture.jpg' width="300" height="150">-->
 ## Bayern Munchen Hackathon - Improving fan experiences
 I was chosen from 1,300 applicants around the world to take part in a hackathon conducted by FC Bayern Munich and Technical University Munich. There, we designed a Computer Vision system that capture people's emotions as they watched football matches, and combined it with corresponding footage from the match, thus creating personalised match highlights for each person. 
 

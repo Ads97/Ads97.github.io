@@ -1,6 +1,6 @@
 ---
 title: "Parliamentary Trip"
-excerpt: "Selected by IIT Madras to meet Indian ministers and discuss policy with them
+excerpt: "Selected by IIT Madras to meet Indian ministers and discuss policy with them"
 collection: portfolio
 ---
 
