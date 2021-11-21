@@ -10,7 +10,7 @@ main:
     url: /awards/    
     
   - title: "Work experience"
-    url: /posts/
+    url: /experience/
         
   - title: "Activities"
     url: /activities/
