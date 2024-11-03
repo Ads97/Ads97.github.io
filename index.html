@@ -60,29 +60,19 @@
       <div class="row">
 
         <!-- Blog Entries Column -->
-        <div class="col-md-12">
-
-          <!-- First Blog Post -->
-          <h2 class="post-title">
-            <a href="post.html">Blog Post Title</a>
-          </h2>
-          <p><span class="glyphicon glyphicon-time"></span> Posted on October 26, 2024</p>
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolore, veritatis, tempora, necessitatibus inventore nisi quam quia repellat ut tempore laborum possimus eum dicta id animi corrupti debitis ipsum officiis rerum.</p>
-          <a class="btn btn-default" href="post.html">Read More</a>
-
-          <hr>
-
-          <!-- Pager -->
-          <ul class="pager">
-            <li class="previous">
-              <a href="#">Prev</a>
-            </li>
-            <li class="next">
-              <a href="#">Next</a>
-            </li>
-          </ul>
-
+        <div class="col-md-12" id="blog-posts">
+          <!-- Posts will be dynamically inserted here -->
         </div>
+
+        <!-- Pager -->
+        <ul class="pager">
+          <li class="previous">
+            <a href="#" id="prev-page">Prev</a>
+          </li>
+          <li class="next">
+            <a href="#" id="next-page">Next</a>
+          </li>
+        </ul>
 
       </div>
       <!-- /.row -->
@@ -109,6 +99,9 @@
 
     <!-- Bootstrap Core JavaScript -->
     <script src="js/bootstrap.min.js"></script>
+
+    <!-- Load Posts JavaScript -->
+    <script src="js/load-posts.js"></script>
 
   </body>
 

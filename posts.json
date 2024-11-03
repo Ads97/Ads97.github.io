@@ -1,0 +1,22 @@
+{
+  "posts": [
+    {
+      "title": "First Blog Post",
+      "date": "2024-10-26",
+      "filename": "first-post.html",
+      "excerpt": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolore, veritatis, tempora, necessitatibus inventore nisi quam quia repellat ut tempore laborum possimus eum dicta id animi corrupti debitis ipsum officiis rerum."
+    },
+    {
+      "title": "The Future of AI",
+      "date": "2024-03-15",
+      "filename": "second-post.html",
+      "excerpt": "Artificial Intelligence continues to evolve at an unprecedented pace. From machine learning breakthroughs to neural networks that can create art, the possibilities seem endless. This post explores where AI might take us in the next decade."
+    },
+    {
+      "title": "Web Development Best Practices",
+      "date": "2024-03-01",
+      "filename": "third-post.html",
+      "excerpt": "Modern web development requires attention to performance, accessibility, and user experience. In this post, we'll explore the essential practices that every developer should follow to create robust and maintainable web applications."
+    }
+  ]
+} 
