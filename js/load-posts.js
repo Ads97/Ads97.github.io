@@ -7,13 +7,16 @@ const POSTS_PER_PAGE = 2;
 let currentPage = 1;
 
 function createPostHTML(post) {
+    // Check if the filename is an external URL
+    const isExternalUrl = post.filename.startsWith('http');
+    
     return `
         <h2 class="post-title">
-            <a href="/post?file=${post.filename}">${post.title}</a>
+            <a href="${isExternalUrl ? post.filename : `/post?file=${post.filename}`}">${post.title}</a>
         </h2>
         <p><span class="glyphicon glyphicon-time"></span> Posted on ${new Date(post.date).toLocaleDateString()}</p>
         <p>${post.excerpt}</p>
-        <a class="btn btn-default" href="/posts/${post.filename}">Read More</a>
+        <a class="btn btn-default" href="${isExternalUrl ? post.filename : `/posts/${post.filename}`}">Read More</a>
         <hr>
     `;
 }
