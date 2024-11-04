@@ -9,11 +9,11 @@ let currentPage = 1;
 function createPostHTML(post) {
     return `
         <h2 class="post-title">
-            <a href="posts/${post.filename.replace('.md', '.html')}">${post.title}</a>
+            <a href="/post?file=${post.filename}">${post.title}</a>
         </h2>
         <p><span class="glyphicon glyphicon-time"></span> Posted on ${new Date(post.date).toLocaleDateString()}</p>
         <p>${post.excerpt}</p>
-        <a class="btn btn-default" href="posts/${post.filename.replace('.md', '.html')}">Read More</a>
+        <a class="btn btn-default" href="/posts/${post.filename}">Read More</a>
         <hr>
     `;
 }
@@ -50,7 +50,7 @@ async function renderPost(templatePath, postPath) {
 
 // For the index page
 function loadPosts() {
-    fetch('posts.json')
+    fetch('/posts.json')
         .then(response => response.json())
         .then(data => {
             const blogPostsContainer = document.getElementById('blog-posts');
@@ -72,9 +72,32 @@ function loadPosts() {
         });
 }
 
+// Add pagination event listeners
+document.getElementById('prev-page').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (currentPage > 1) {
+        currentPage--;
+        loadPosts();
+    }
+});
+
+document.getElementById('next-page').addEventListener('click', (e) => {
+    e.preventDefault();
+    currentPage++;
+    loadPosts();
+});
+
+// Initial load when the page starts
+if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
+    loadPosts();
+}
+
+// Replace the individual post pages section at the bottom
 // For individual post pages
-if (window.location.pathname.includes('/posts/')) {
-    const postPath = window.location.pathname;
-    renderPost('/post-template.html', postPath.replace('.html', '.md'))
-        .then(html => document.documentElement.innerHTML = html);
+if (window.location.pathname.startsWith('/posts/')) {
+    const postFile = window.location.pathname.split('/posts/')[1];
+    if (postFile) {
+        renderPost('/post-template.html', `/posts/${postFile}`)
+            .then(html => document.documentElement.innerHTML = html);
+    }
 }
