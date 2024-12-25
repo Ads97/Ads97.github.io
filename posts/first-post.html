@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>First Blog Post</title>
+    <title>Litmus test questions to test AI intelligence</title>
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/simple-blog-template.css" rel="stylesheet">
   </head>
@@ -33,12 +33,92 @@
     <div class="container">
       <div class="row">
         <div class="col-lg-12">
-          <h1 class="post-title">First Blog Post</h1>
+          <h1 class="post-title">Litmus test questions to test AI intelligence</h1>
           <hr>
-          <p><span class="glyphicon glyphicon-time"></span> Posted on 2024-10-26</p>
+          <p><span class="glyphicon glyphicon-time"></span> Posted on 2024-12-25</p>
           <hr>
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolore, veritatis, tempora, necessitatibus inventore nisi quam quia repellat ut tempore laborum possimus eum dicta id animi corrupti debitis ipsum officiis rerum.</p>
+          <p>State of the art AI models have been coming out every week for the past month (O1, O1 Pro, Gemini 2 flash thinking, O3), with each one claiming to be more intelligent than the last, and achieving all time high accuracies on benchmarks. O3 in particular has been impressive, with its score on ARC-AGI being touted as a reason for it being an early form of AGI. I personally think ARC is hard not because of reasoning, but because the tasks are in a 2D image grid (recent analysis also indicates the same <sup><a href="https://x.com/goodside/status/1871777037096190038">[2]</a></sup>) </p>
+          <p>Given all the hype, I realized I didnt have my own intelligence test for a model - a good set of questions that I could ask a new model to see if it passed my 'intelligence measure'. Coming up with an 'intelligence test' question is tricky, because of memorization/contamination - LLMs are incredibly good at memorization (a single backward pass is often enough to memorize a large chunk of text<sup><a href="https://x.com/karpathy/status/1814038096218083497">[1]</a></sup>). This means you can't take any challenges that exist on the internet (and that I probably cant reuse any questions I share here ;) ). Another issue is that I want to separate knowledge from intelligence - intelligence is the meta ability to learn new things efficiently. Any question I come up with should be such that the model can not benefit from prior knowledge in answering that question</p>
+          <p>Therefore, any 'AGI Intelligence test' question should have the following characteristics:</p>
+          <ol>
+            <li><b>Low occurence in the training distribution:</b> The domain for the problem should not be very prevelant in the training distribution. For example, Google measures Gemini's ability to translate to and from Kalamang, a language with less than 200 speakers <sup><a href="https://arxiv.org/html/2403.05530v2">[3]</a></sup>, albeit with a vague evaluation setup.</li>
+            <li><b>Large, un-memorizable answer space:</b> One of the reasons AlphaGo is so significant is because Go has an extremely large search space, and it is impossible to win by memorizing the optimal move for every board position. </li>
+            <li><b>Should be completely solvable from the question:</b> As Francis Choilet puts it, intelligence is the skill through which you acquire new skills. Therefore, the test should demonstrate a new skill, and examine a model's ability to use that new skill</li>
+          </ol>
           <hr>
+          Based on the above criterion, I've come to the conclusion that linguistics Olympiad questions <sup><a href="https://ioling.org/">[4]</a></sup> are a great litmus test for model intelligence. The questions are usually about esoteric languages (such as Japanese braille), which models are unlikely to have seen too much of during training. They're meant to logical deduction problems, where the problem is entirely solvable using the examples provided in the question. Languages generally have a large number of symbols that can be combined in many ways, and so the search space is also likely to be large. Linguistics is also a beautiful evaluation method because its based on the very things LLMs are supposed to be experts on - language. So lets see how they perform on them!
+
+          <h1>Intelligence Test 1: Japenese Braille</h1>
+          This is a problem of 'easy' difficulty in the ILO. Here's the question:
+          <img src="../images/JapaneseBraille.png" alt="Japanese Braille ILO Sample Question" class="img-responsive">
+          The problem's actually fairly fun to solve, and I encourage you to try solving it. I modifed the problem above to reduce the impact of memorization - removing any mention of Japenese Braille, and converting the braille images into a series of binary digits (with 1s representing large dots and 0s representing small ones). Here's how the top models did on it:
+
+          <img src="../images/japanese-braille-example.png" alt="Japanese Braille Example" class="img-responsive">
+
+          <!-- Performance Table -->
+          <table class="table table-bordered table-hover" style="margin-top: 20px;">
+            <thead>
+              <tr>
+                <th>Model Name</th>
+                <th>Performance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>GPT4O</td>
+                <td>4/6 in first part, 0 in the rest</td>
+              </tr>
+              <tr style="background-color: #dff0d8; font-weight: bold;">
+                <td>O1</td>
+                <td>Gets all 4 parts correct! Interestingly, it guesses the 2nd part (memorization advantage?), but then figures out the rule system in the 3rd part.</td>
+              </tr>
+              <tr>
+                <td>Gemini2-Flash-Thinking-Experimental</td>
+                <td>3/6 first part, 0 in the rest</td>
+              </tr>
+              <tr>
+                <td>Claude-35-Sonnet</td>
+                <td>1/6 in the first part, 1/2 in the second part by guessing (memorization?), 0 in the rest</td>
+              </tr>
+            </tbody>
+          </table>
+
+          O1 is seriously impressive! It nailed the problem in under 2 minutes, while others struggled with it (I might be ashamed to say it took me a lot more than 2 minutes). But let's see if it can handle a tougher question
+
+          <h1>Inuktitut Numbers</h1>
+          This one's marked a 'medium' in difficulty, but I honestly thought it was pretty easy. 
+          <img src="../images/InuktitutNumbers.png" alt="Japanese Braille Example" class="img-responsive">
+          As usual, I removed any mention of Inuktitut to prevent memorization, and I converted the symbols into an easy form for the LLMs to digest - using slashes ('/','\') and apostrophes to write the above equations. Here's how the LLMs performed
+          <!-- Performance Table -->
+          <table class="table table-bordered table-hover" style="margin-top: 20px;">
+            <thead>
+              <tr>
+                <th>Model Name</th>
+                <th>Performance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>GPT4O</td>
+                <td>0</td>
+              </tr>
+              <tr style="font-weight: bold;">
+                <td>O1</td>
+                <td>Gets 2 parts out of 6. It got some parts right (what the slashes represent, the value for 0), but others wrong - the base the system operates in (base 20), the value for the apostrophes</td>
+              </tr>
+              <tr>
+                <td>Gemini2-Flash-Thinking-Experimental</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td>Claude-35-Sonnet</td>
+                <td>0</td>
+              </tr>
+            </tbody>
+          </table>
+          Well, it looks like we have our new AGI test question! O1 gives it a fair shot but falls short of making any real progress on the problem. The other models dont even grasp how to start it.
+          <h1>Conclusion</h1>
+          Linguistics Olympiad questions are a great intelligence measure for LLMs because they introduce new rules and test an LLM's ability to understand and apply them. Even though they're based in language, LLMs can't use prior knowledge because the languages have negligible presence in training data. There's a large bank of such questions and new ones are created every year for the Olympiad, and so we should have a fairly large set of questions to test LLMs on. And the questions we tried today are still pretty (they're nothing close to what gets asked in the Olympiad) - so it'll be interesting to see how O3/O1 pro/future models perform on these. 
           <!-- Blog Comments -->
           <script src="https://utteranc.es/client.js"
             repo="Ads97/Ads97.github.io"
