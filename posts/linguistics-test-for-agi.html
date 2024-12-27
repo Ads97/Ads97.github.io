@@ -37,30 +37,78 @@
           <hr>
           <p><span class="glyphicon glyphicon-time"></span> Posted on 2024-12-25</p>
           <hr>
-          <p>State of the art AI models have been coming out every week for the past month (O1, Gemini 2 flash thinking, O3), with each one being more intelligent than the last and achieving all time high accuracies on benchmarks. O3 in particular has been impressive, with its score on ARC-AGI being touted as a reason for it being an early form of AGI. I personally think ARC is hard not because of reasoning, but because a 2D image grid is hard for LLMs to visualize(recent analysis also indicates the same <sup><a href="https://x.com/mikb0b/status/1871573530917110243">[1]</a></sup>) </p>
-          <p>Given all the hype, I decided to form my own intelligence test for a model. Coming up with an 'intelligence test' question is tricky because of memorization - LLMs are incredibly good at remembering things they've seen before (a single backward pass is often enough to memorize a large chunk of text<sup><a href="https://x.com/karpathy/status/1814038096218083497">[2]</a></sup>). This means I can't use any challenges that exist on the internet (and that I probably cant reuse any questions I share here either). It's also important to separate knowledge from intelligence in the question - intelligence is the meta ability to learn new things, while knowledge is a test of its existing understanding.</p>
+          <p>State of the art AI models have been coming out every week for the past month (OpenAI's O1, Gemini 2 flash thinking, O3), with each one being more intelligent than the last and achieving all time high accuracies on benchmarks. O3 in particular has been impressive, with its score on ARC-AGI being touted as a reason for it being an early form of AGI. I personally think ARC is hard not because of reasoning, but because a 2D image grid is hard for LLMs to visualize (see similar opinions here <sup><a href="https://x.com/mikb0b/status/1871573530917110243">[1]</a></sup>). </p>
+          <p>Given all the hype, I decided to form my own intelligence test for a model. Coming up with an 'intelligence test' question is tricky because of memorization - LLMs are incredibly good at remembering things they've seen before (a single backward pass is often enough to memorize a large chunk of text<sup><a href="https://x.com/karpathy/status/1814038096218083497">[2]</a></sup>). This means I can't use any challenges that exist on the internet (and I probably cant reuse any questions I share here either). It's also important to separate knowledge from intelligence in the question - intelligence is the meta ability to learn and apply new things, while knowledge is a test of a model's existing understanding.</p>
           <p>Therefore, any 'AI Intelligence test' question should have the following characteristics:</p>
           <ol>
-            <li><b>Low occurence in the training distribution:</b> The new skill being tested should not be prevelant on the internet. For example, Google measures Gemini's ability to translate to and from Kalamang<sup><a href="https://arxiv.org/html/2403.05530v2">[3]</a></sup>, a language with less than 200 speakers, in order to counter this.</li>
+            <li><b>Low occurence in the training distribution:</b> The new skill being tested should not be prevalent on the internet. For example, Google measures Gemini's ability to translate to and from Kalamang<sup><a href="https://arxiv.org/html/2403.05530v2">[3]</a></sup>, a language with less than 200 speakers, in order to counter this.</li>
             <li><b>Large, un-memorizable answer space:</b> One of the reasons AlphaGo is so significant is because Go has an extremely large search space, and it is impossible to win by memorizing the optimal move for every board position. </li>
             <li><b>Should be completely solvable from the question:</b> As Francis Choilet puts it, intelligence is the skill through which you acquire new skills. Therefore, the test should demonstrate a new skill, and examine a model's ability to use that new skill</li>
           </ol>
           <hr>
-          Based on the above criterion, I think linguistics Olympiad questions <sup><a href="https://ioling.org/">[4]</a></sup> are a great litmus test for model intelligence. 
+          Based on the above criterion, I think linguistics Olympiad questions<sup><a href="https://ioling.org/">[4]</a></sup> are a great litmus test for model intelligence. 
           <ol>
-            <li>The questions are usually about esoteric languages (such as Japanese braille), which models are unlikely to have seen in large quantities during training. </li>
+            <li>The questions are usually about esoteric languages (such as Inuktitut), which models are unlikely to have seen in large quantities during training. </li>
             <li>They are logical deduction problems, where the problem is entirely solvable using the examples provided in the question, with no prior understanding of languages needed.</li>
             <li>Languages generally have a large number of symbols that can be combined in many ways, and so the search space for a possible answer is likely to be large.</li>
           </ol>  
           Linguistics is also a beautiful evaluation method because its based on the very things LLMs are supposed to be experts on - language. So lets see how they perform on them!
 
           <h1>Intelligence Test 1: Japenese Braille</h1>
-          This is a problem of 'easy' difficulty in the ILO. Here's the question:
+          This is a problem of 'easy' difficulty. Here's the question:
           <div style="border: 2px solid #ddd; padding: 10px; display: inline-block; margin-top: 20px; text-align: center;">
             <img src="../images/JapaneseBraille.png" alt="Japanese Braille ILO Sample Question" class="img-responsive">
             <p style="margin-top: 10px; font-style: italic; color: #555;">This one's pretty fun to solve</p>
           </div>
-          The problem's actually fairly fun to solve, and I encourage you to try solving it. I modifed the problem above to reduce the impact of memorization - removing any mention of Japenese Braille, and converting the braille images into a series of binary digits (with 1s representing large dots and 0s representing small ones). Here's how the top models did on it:
+          The problem's actually fairly fun to solve, and I encourage you to try solving it (Here's <a href="https://ioling.org/booklets/samples.solution.en.pdf">the solution</a>, in case you'd rather pass). This one should also be easy for LLMs because they're likely to have some prior exposure to Japanese Braille in their training data (for example, GPT-4O already knows its basic rules<a href="https://chatgpt.com/share/676e2a69-c120-8000-b89a-6aa3da0bf412"><sup>[6]</sup></a>). I modifed the problem above to reduce the impact of memorization - removing any mention of Japenese Braille, and converting the braille images into a series of binary digits (with 1s representing large dots and 0s representing small ones). 
+          
+          <!-- Replace the modal with a collapsible panel -->
+          <div class="panel panel-default" style="margin-top: 20px;">
+            <div class="panel-heading">
+              <h4 class="panel-title" style="margin:0;">
+                <!-- data-toggle="collapse" triggers Bootstrap’s collapse -->
+                <!-- href="#promptContent" indicates which element to show/hide -->
+                <a data-toggle="collapse" href="#promptContent" class="collapsed">
+                  <!-- 
+                    The chevron icon (glyphicon-chevron-right) will rotate or change when clicked.
+                  -->
+                  <span class="glyphicon glyphicon-chevron-right" style="margin-right: 8px;"></span>
+                  Complete Prompt
+                </a>
+              </h4>
+            </div>
+            <!-- This is the collapsible content area -->
+            <div id="promptContent" class="panel-collapse collapse">
+              <div class="panel-body">
+                <pre>
+Advaithese is a language system consisting of 0s and 1s. Here’s an example of the word karaoke in Advaithese
+
+Karaoke: 100001 100100 011000 111001
+
+Part 1: The following words represent Atari, haiku, katana, kimono, koi and sake. Which is which? You dont need to know either Japanese or Advaithese to figure it out; you’ll find that the system is highly logical
+
+A: 100011 101000 110001
+B: 100101 111001
+C: 100001 100110 100010
+D: 101001 011111 011010
+E: 011001 101000
+F: 100000 100110 101100
+
+Part 2: What are the following words?
+A: 100001 100100 111110
+B: 100000 101010 111111
+
+Part 3: How do you write “ro” in Advaithese?
+
+Part 4: Write the following words in Advaithese characters:
+A: Samurai
+B: Miso
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          Here's how the top models did on it:
 
           <!-- Performance Table -->
           <table class="table table-bordered table-hover" style="margin-top: 20px;">
@@ -98,7 +146,53 @@
             <img src="../images/InuktitutNumbers.png" alt="Inuktitut Numbers" class="img-responsive">
             <p style="margin-top: 10px; font-style: italic; color: #555;">This one becomes easy once you make a reasonable guess</p>
           </div>
-          As usual, I removed any mention of Inuktitut to prevent memorization, and I converted the symbols into an easy form for the LLMs to digest - using slashes ('/','\') and apostrophes to write the above equations. Here's how the LLMs performed
+          As usual, I removed any mention of Inuktitut to prevent memorization, and I converted the symbols into an easy form for the LLMs to digest - using slashes ('/','\') and apostrophes to write the above equations. 
+          
+          <!-- Replace the modal with a collapsible panel -->
+          <div class="panel panel-default" style="margin-top: 20px;">
+            <div class="panel-heading">
+              <h4 class="panel-title" style="margin:0;">
+                <!-- data-toggle="collapse" triggers Bootstrap’s collapse -->
+                <!-- href="#promptContent" indicates which element to show/hide -->
+                <a data-toggle="collapse" href="#promptContent2" class="collapsed">
+                  <!-- 
+                    The chevron icon (glyphicon-chevron-right) will rotate or change when clicked.
+                  -->
+                  <span class="glyphicon glyphicon-chevron-right" style="margin-right: 8px;"></span>
+                  Complete Prompt
+                </a>
+              </h4>
+            </div>
+            <!-- This is the collapsible content area -->
+            <div id="promptContent2" class="panel-collapse collapse">
+              <div class="panel-body">
+                <pre>
+Advaithese is a new language. Advaithese has a new way of writing numbers, more appropriate for the way numbers are expressed in the Advaithese language. Imagine that you find some Advaithese students that know nothing about English, Latin script or Indo-Arabic numerals. Then, in order to start communication, one of the students offer you a list of mathematical operations, shown below. This version of the table uses the Indo-Arabic symbols for the operations.
+
+\ + \ = \/
+\/ +\/\ = ‘
+\/\/‘ + \/‘ = \’`’
+\/\’`’ - \/\ = ‘`’
+\/\ * ‘ = ‘`’
+\/\/‘ * \/‘ = \/\ \/\
+\/\/ ~ + \ ’`’ = \/\/ \’`’
+
+
+Seeing that you understood the table, the student challenges you to write down the answers to the following operations. Give the answers in Advaithese numerals.
+
+\/\ + \/\ = 
+~ * ‘` ’` ’` = 
+\ ~ - \/\ = 
+‘ * ‘ = 
+\/\’` - \/\ = 
+\ \/‘` + \ \/\/‘ =
+                </pre>
+              </div>
+            </div>
+          </div>
+
+
+          Here's how the LLMs performed
           <!-- Performance Table -->
           <table class="table table-bordered table-hover" style="margin-top: 20px;">
             <thead>
@@ -114,7 +208,7 @@
               </tr>
               <tr style="background-color: #f0ded9;">
                 <td><b>O1</b></td>
-                <td>Gets 2 parts out of 6. It got some parts right (what the slashes represent, the value for 0), but others wrong - the base the system operates in (base 20), the value for the apostrophes</td>
+                <td>Gets 2 parts out of 6. It got some parts right (what the slashes represent, the value for 0), but others wrong - the base the system operates in (base 20) and the value for the apostrophes</td>
               </tr>
               <tr style="background-color: #f0ded9;">
                 <td>Gemini2-Flash-Thinking-Experimental</td>
@@ -126,9 +220,11 @@
               </tr>
             </tbody>
           </table>
-          Well, it looks like we have our new AGI test question! O1 gives it a fair shot but falls short of making any real progress on the problem. The other models dont even grasp how to start it.
+          Well, it looks like we have our new AI intelligence litmus test question! O1 gives it a fair shot but falls short of making any real progress on the problem. The other models dont even grasp how to start it.
           <h1>Conclusion</h1>
-          Linguistics Olympiad questions are a great intelligence measure for LLMs because they introduce new rules and test an LLM's ability to understand and apply them. Even though they're based in language, LLMs can't use prior knowledge because the languages have negligible presence in training data. There's a large bank of such questions and new ones are created every year for the Olympiad, and so we should have a fairly large set of questions to test LLMs on. And the questions we tried today are still pretty (they're nothing close to what gets asked in the Olympiad) - so it'll be interesting to see how O3/O1 pro/future models perform on these. 
+          Linguistics Olympiad questions are a great intelligence measure for LLMs because they introduce new rules and test an LLM's ability to understand and apply them. Even though they're based in language, LLMs can't use prior knowledge because the languages have negligible presence in training data. There's a large bank of such questions and new ones are created every year for the Olympiad, and so we should have a fairly large set of questions to test LLMs on. And the questions we tried today are still pretty east (they're nothing close to what gets asked in the Olympiad) - so it'll be interesting to see how O3/O1 pro/future models perform on these.
+          <br><br>
+          Update: One paper in NeurIPS 2024 introduces a linguistics evaluation dataset - LingOly<sup><a href="https://arxiv.org/html/2406.06196v1">[5]</a></sup>. Model performance on it appears poor (though they have not evaluated O1 on it), it'll be interesting to see how quickly this benchmark saturates. 
           <!-- Blog Comments -->
           <script src="https://utteranc.es/client.js"
             repo="Ads97/Ads97.github.io"
@@ -143,5 +239,20 @@
 
     <script src="../js/jquery.js"></script>
     <script src="../js/bootstrap.min.js"></script>
+    <script>
+      // On expand: switch to down chevron
+      $('.panel-collapse').on('show.bs.collapse', function () {
+        $(this).parent().find('.glyphicon-chevron-right')
+               .removeClass('glyphicon-chevron-right')
+               .addClass('glyphicon-chevron-down');
+      });
+    
+      // On collapse: switch back to right chevron
+      $('.panel-collapse').on('hide.bs.collapse', function () {
+        $(this).parent().find('.glyphicon-chevron-down')
+               .removeClass('glyphicon-chevron-down')
+               .addClass('glyphicon-chevron-right');
+      });
+    </script>
   </body>
 </html>
