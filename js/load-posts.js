@@ -12,7 +12,7 @@ function createPostHTML(post) {
     
     return `
         <h2 class="post-title">
-            <a href="${isExternalUrl ? post.filename : `/post?file=${post.filename}`}">${post.title}</a>
+            <a href="${isExternalUrl ? post.filename : `/posts/${post.filename}`}">${post.title}</a>
         </h2>
         <p><span class="glyphicon glyphicon-time"></span> Posted on ${new Date(post.date).toLocaleDateString()}</p>
         <p>${post.excerpt}</p>
