@@ -27,9 +27,18 @@ let keys = {              // Track key presses
     left: false,
     right: false
 };
+let audio = {             // Audio elements
+    backgroundMusic: null  // Background music
+};
 
 // Initialize the game
 function init() {
+    // Set up background music
+    setupBackgroundMusic();
+    
+    // Setup tutorial popup
+    setupTutorial();
+    
     // Create scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(COLORS.SKY);
@@ -415,26 +424,77 @@ function updateParticles(deltaTime) {
     });
 }
 
-// Animation loop
-function animate() {
-    requestAnimationFrame(animate);
-    const deltaTime = maze.clock.getDelta();
+// Setup background music
+function setupBackgroundMusic() {
+    // Create audio element
+    audio.backgroundMusic = new Audio('Whispers in the Hall.mp3');
+    audio.backgroundMusic.loop = true;
+    audio.backgroundMusic.volume = 0.6; // Set to 60% volume
     
-    // Update particles
-    updateParticles(deltaTime);
+    // Try to autoplay immediately
+    const playPromise = audio.backgroundMusic.play();
     
-    // Make the cup glow pulse
-    if (maze.cup) {
-        // Pulse the point light in the cup
-        const pulseFactor = (Math.sin(maze.clock.getElapsedTime() * 2) + 1) / 2;
-        const cupLight = maze.cup.children.find(child => child instanceof THREE.PointLight);
-        if (cupLight) {
-            cupLight.intensity = 0.5 + pulseFactor * 0.8;
+    // Handle autoplay blocking (common in modern browsers)
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log('Autoplay prevented by browser, using touch and interaction events as fallback');
+            
+            // For mobile: add touch event listeners for first interaction
+            const startAudio = () => {
+                audio.backgroundMusic.play();
+                // Remove all event listeners after first successful play
+                document.removeEventListener('touchstart', startAudio);
+                document.removeEventListener('touchend', startAudio);
+                document.removeEventListener('click', startAudio);
+                document.removeEventListener('keydown', startAudio);
+            };
+            
+            // Add multiple event listeners to catch any type of interaction
+            document.addEventListener('touchstart', startAudio, { once: true });
+            document.addEventListener('touchend', startAudio, { once: true });
+            document.addEventListener('click', startAudio, { once: true });
+            document.addEventListener('keydown', startAudio, { once: true });
+        });
+    }
+}
+
+// Setup tutorial popup
+function setupTutorial() {
+    const tutorialPopup = document.getElementById('tutorial-popup');
+    const closeButton = document.getElementById('tutorial-close');
+    
+    // Check if user has seen tutorial before
+    const hasSeenTutorial = localStorage.getItem('hasSeenMazeTutorial');
+    
+    // Show tutorial if first visit
+    if (!hasSeenTutorial) {
+        tutorialPopup.style.display = 'block';
+        
+        // Pause game while tutorial is open (optional)
+        if (maze.controls) {
+            maze.controls.enabled = false;
         }
+    } else {
+        tutorialPopup.style.display = 'none';
     }
     
-    updatePlayer();
-    renderer.render(scene, camera);
+    // Close tutorial when button is clicked
+    closeButton.addEventListener('click', () => {
+        tutorialPopup.style.display = 'none';
+        
+        // Save that user has seen tutorial
+        localStorage.setItem('hasSeenMazeTutorial', 'true');
+        
+        // Enable controls
+        if (maze.controls) {
+            maze.controls.enabled = true;
+        }
+        
+        // Start background music when tutorial is closed
+        if (audio.backgroundMusic) {
+            audio.backgroundMusic.play().catch(e => console.log('Audio play failed:', e));
+        }
+    });
 }
 
 // Start the game
