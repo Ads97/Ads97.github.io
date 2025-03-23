@@ -118,6 +118,23 @@
             text-align: center;
             font-size: 24px;
         }
+        #level-message {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #ffca28;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            opacity: 0;
+            z-index: 50;
+            text-align: center;
+            transition: opacity 1s ease-in-out;
+            box-shadow: 0 0 15px rgba(255, 202, 40, 0.3);
+        }
         /* Mobile controls styling */
         #mobile-controls {
             position: fixed;
@@ -156,7 +173,8 @@
 </head>
 <body>
     <div id="game-container">
-        <div id="win-popup">🏆 Level 1 Complete! 🏆</div>
+        <div id="win-popup">🏆 Level 2 Complete! 🏆</div>
+        <div id="level-message">Level 1</div>
         
         <!-- Tutorial Popup -->
         <div id="tutorial-popup">
@@ -186,5 +204,6 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="game.js"></script>
+    <script src="level2.js"></script>
 </body>
 </html>
