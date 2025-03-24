@@ -1,32 +1,60 @@
 // Level 2 code for the Triwizard Maze game
+// Level 2 code uses the global CONFIG and LEVEL2 objects from config.js
+
+// Centralized reset function for Level 2
+// This function will handle all resets when a player dies, regardless of death cause
+function resetLevel2Player(player, maze) {
+    console.log('RESET: Centralizing player and level reset');
+    
+    // Reset player position and movement state
+    player.position.set(LEVEL2.PLAYER_START.x, LEVEL2.PLAYER_START.y, LEVEL2.PLAYER_START.z);
+    player.rotation = 0;
+    player.canMove = true;
+    
+    // Reset speed boost player state
+    player.speedBoostActive = false;
+    player.speed = player.originalSpeed || 0.15;
+    
+    // Reset music speed
+    if (window.audioController && typeof window.audioController.reset === 'function') {
+        window.audioController.reset();
+    }
+    
+    // Reset speed boost powerup
+    if (maze.speedBoost) {
+        maze.speedBoost.active = true;
+        if (maze.speedBoost.mesh) {
+            maze.speedBoost.mesh.visible = true;
+        }
+    }
+    
+    // Reset monster if it exists
+    if (maze.monster) {
+        maze.monster.mesh.position.set(-22.5, 1.5, -2);
+        maze.monster.awakened = false;
+        maze.monster.warningShown = false;
+        maze.monster.gameOver = false;
+    }
+    
+}
 
 // Direct access to audio object for speed control
 function setMusicSpeed(speed) {
-    console.log('Direct music speed control - setting speed to:', speed);
     
     // First try to access the audio from the window.audio object
     if (window.audio && window.audio.backgroundMusic) {
         try {
-            // Print all properties of the audio object
-            console.log('Audio object found, properties:', Object.getOwnPropertyNames(window.audio.backgroundMusic));
-            console.log('Audio paused state:', window.audio.backgroundMusic.paused);
-            
             // Store original rate if not already stored
             if (typeof window.audio.backgroundMusic._originalRate === 'undefined') {
                 window.audio.backgroundMusic._originalRate = window.audio.backgroundMusic.playbackRate || 1.0;
-                console.log('Stored original rate:', window.audio.backgroundMusic._originalRate);
             }
             
             // Attempt direct property modification
             const prevRate = window.audio.backgroundMusic.playbackRate;
             window.audio.backgroundMusic.playbackRate = speed;
             
-            // Check if it worked
-            console.log('Previous rate:', prevRate, 'New rate:', window.audio.backgroundMusic.playbackRate);
-            
             // Manual implementation - recreate the audio with the new speed
             if (window.audio.backgroundMusic.playbackRate !== speed) {
-                console.log('Property set failed, trying alternate method');
                 
                 // Remember audio state
                 const wasPlaying = !window.audio.backgroundMusic.paused;
@@ -49,38 +77,31 @@ function setMusicSpeed(speed) {
                 }
                 
                 window.audio.backgroundMusic = newAudio;
-                console.log('Created new audio with speed:', window.audio.backgroundMusic.playbackRate);
             }
             
             return true;
         } catch (e) {
-            console.error('Error setting music speed:', e);
             return false;
         }
     } else {
-        console.log('Audio object not found in expected location');
         return false;
     }
 }
 
 function resetMusicSpeed() {
-    console.log('Direct music speed control - resetting speed');
     
     // First try to access the audio from the window.audio object
     if (window.audio && window.audio.backgroundMusic) {
         try {
             const originalRate = window.audio.backgroundMusic._originalRate || 1.0;
-            console.log('Resetting to original rate:', originalRate);
             
             // Attempt direct property modification
             window.audio.backgroundMusic.playbackRate = originalRate;
             
             // Check if it worked
-            console.log('New rate after reset:', window.audio.backgroundMusic.playbackRate);
             
             // Similar fallback as in setMusicSpeed if needed
             if (window.audio.backgroundMusic.playbackRate !== originalRate) {
-                console.log('Reset failed, trying alternate method');
                 
                 // Remember audio state
                 const wasPlaying = !window.audio.backgroundMusic.paused;
@@ -102,33 +123,19 @@ function resetMusicSpeed() {
                 }
                 
                 window.audio.backgroundMusic = newAudio;
-                console.log('Created new audio with original speed:', newAudio.playbackRate);
             }
             
             return true;
         } catch (e) {
-            console.error('Error resetting music speed:', e);
             return false;
         }
     } else {
-        console.log('Audio object not found in expected location');
         return false;
     }
 }
 
-// Level 2 constants
-const LEVEL2 = {
-    SKY_COLOR: '#1a237e', // Darker blue for level 2
-    PLAYER_START: new THREE.Vector3(0, 0, 15),
-    CUP_POSITION: new THREE.Vector3(-20, 0.6, -20),
-    TRAPDOOR_POSITION: new THREE.Vector3(10, 0, -12), // Updated trapdoor position
-    TRAPDOOR_SIZE: 1.5, // Smaller trapdoor size for players to walk around
-    SPEEDBOOST_POSITION: new THREE.Vector3(-10, 0, -12.5), // Position for speed boost powerup
-    SPEEDBOOST_SIZE: 0.5, // Size of the speed boost powerup
-    SPEEDBOOST_DURATION: 10, // Duration of speed boost in seconds
-    SPIKE_CYCLE: 3000, // Spike cycle time in milliseconds (3 seconds)
-    SPIKE_ACTIVE_TIME: 1500 // How long spikes stay up (1.5 seconds)
-};
+// Level 2 constants are now defined in config.js and accessed via the global LEVEL2 object
+// The original LEVEL2 constant has been removed to avoid naming conflicts
 
 // Create Level 2 maze with a simple path: straight, left turn, right turn
 function createLevel2Maze(scene, maze, wallMaterial) {
@@ -227,15 +234,16 @@ function createSpikes(scene, maze, width, height, depth, x, y, z) {
             const timeSinceLastCycle = currentTime - this.lastCycleTime;
             
             // Determine if spikes should be active based on cycle time
-            if (timeSinceLastCycle % LEVEL2.SPIKE_CYCLE < LEVEL2.SPIKE_ACTIVE_TIME) {
+            if (timeSinceLastCycle % LEVEL2.SPIKES.CYCLE < LEVEL2.SPIKES.ACTIVE_TIME) {
                 // Spikes should be active (up)
                 if (!this.active) {
                     this.active = true;
                     
-                    // Move spikes up instantly for now
+                    // Move spikes up so they extend above the floor
                     this.spikes.forEach(spike => {
-                        spike.position.y = -1.5; // Move spike up to floor level
+                        spike.position.y = -1.0; // Extend the spikes above the floor level
                     });
+                    console.log('SPIKES: Extended above floor');
                 }
             } else {
                 // Spikes should be inactive (down)
@@ -250,8 +258,8 @@ function createSpikes(scene, maze, width, height, depth, x, y, z) {
             }
             
             // Start a new cycle if needed
-            if (timeSinceLastCycle >= LEVEL2.SPIKE_CYCLE) {
-                this.lastCycleTime = currentTime - (timeSinceLastCycle % LEVEL2.SPIKE_CYCLE);
+            if (timeSinceLastCycle >= LEVEL2.SPIKES.CYCLE) {
+                this.lastCycleTime = currentTime - (timeSinceLastCycle % LEVEL2.SPIKES.CYCLE);
             }
         },
         checkCollision: function(playerPosition) {
@@ -325,6 +333,9 @@ function loadLevel2(scene, maze, player, showLevelMessage) {
     // Create speed boost powerup
     createSpeedBoost(scene, maze);
     
+    // Create monster
+    createMonster(scene, maze);
+    
     // Set up check for trapdoor and speed boost collisions
     // The speed boost check is integrated in the same override
     setupTrapdoorCheck(player, scene, maze);
@@ -369,9 +380,9 @@ function createTrapdoor(scene, maze) {
     
     // Position the entire trapdoor group
     trapdoorGroup.position.set(
-        LEVEL2.TRAPDOOR_POSITION.x,
-        LEVEL2.TRAPDOOR_POSITION.y,
-        LEVEL2.TRAPDOOR_POSITION.z
+        LEVEL2.TRAPDOOR.POSITION.x,
+        LEVEL2.TRAPDOOR.POSITION.y,
+        LEVEL2.TRAPDOOR.POSITION.z
     );
     
     // Add to scene
@@ -380,8 +391,8 @@ function createTrapdoor(scene, maze) {
     // Store the trapdoor in the maze object
     maze.trapdoor = {
         mesh: trapdoorGroup,
-        position: LEVEL2.TRAPDOOR_POSITION,
-        size: LEVEL2.TRAPDOOR_SIZE / 2.5 // Reduced collision size to allow walking around it
+        position: LEVEL2.TRAPDOOR.POSITION,
+        size: LEVEL2.TRAPDOOR.COLLISION_SIZE // Using the predefined collision size from config
     };
 }
 
@@ -432,7 +443,7 @@ function setupTrapdoorCheck(player, scene, maze) {
                 
                 // Show game over message after a short delay
                 setTimeout(() => {
-                    showTrapdoorGameOver(scene, player);
+                    showTrapdoorGameOver(scene, player, maze);
                 }, 800);
             }
         }
@@ -451,7 +462,7 @@ function setupTrapdoorCheck(player, scene, maze) {
                 setTimeout(() => {
                     // Reset height before showing game over
                     player.position.y = 0;
-                    showSpikeGameOver(scene, player);
+                    showSpikeGameOver(scene, player, maze);
                 }, 300);
             }
         }
@@ -465,23 +476,26 @@ function setupTrapdoorCheck(player, scene, maze) {
             
             // If player collects the speed boost
             if (distance < maze.speedBoost.size) {
-                console.log('Player collected speed boost!');
+                console.log('SPEEDBOOST: Player collected speed boost!');
+                console.log('SPEEDBOOST: Current state before collection - active:', maze.speedBoost.active, 'visible:', maze.speedBoost.mesh.visible);
                 
                 // Only apply boost if not already active
                 if (!player.speedBoostActive) {
                     // Store original speed and apply boost
                     player.originalSpeed = player.speed;
-                    player.speed = player.originalSpeed * 3; // Triple the speed
+                    player.speed = player.originalSpeed * LEVEL2.SPEEDBOOST.MULTIPLIER; // Apply configured multiplier
                     player.speedBoostActive = true;
+                    console.log('SPEEDBOOST: Applied speed multiplier. New speed:', player.speed);
                     
-                    // Speed up the music to 2x when speed boost is active
+                    // Speed up the music when speed boost is active
                     if (window.audioController && typeof window.audioController.speedUp === 'function') {
-                        window.audioController.speedUp(2.0);
+                        window.audioController.speedUp(CONFIG.AUDIO.SPEED_BOOST_RATE);
                     }
                     
                     // Hide the speed boost mesh
                     maze.speedBoost.mesh.visible = false;
                     maze.speedBoost.active = false;
+                    console.log('SPEEDBOOST: After collection - active:', maze.speedBoost.active, 'visible:', maze.speedBoost.mesh.visible);
                     
                     // Show activation message
                     showSpeedBoostMessage();
@@ -502,15 +516,72 @@ function setupTrapdoorCheck(player, scene, maze) {
                             
                             showSpeedBoostEndMessage();
                         }
-                    }, LEVEL2.SPEEDBOOST_DURATION * 1000);
+                    }, LEVEL2.SPEEDBOOST.DURATION * 1000);
                 }
             }
         }
     };
 }
 
-// Display game over message when player falls into trapdoor
-function showTrapdoorGameOver(scene, player) {
+/**
+ * Centralized function to respawn the player and reset all game elements
+ * This ensures consistent respawn behavior across all death scenarios
+ */
+function respawnPlayer(player, maze) {
+    console.log('RESPAWN: Resetting player and game state');
+    
+    // Reset player position and allow movement
+    player.position.set(LEVEL2.PLAYER_START.x, LEVEL2.PLAYER_START.y, LEVEL2.PLAYER_START.z);
+    player.rotation = 0;
+    player.canMove = true;
+    
+    // Reset any active power-ups
+    player.speedBoostActive = false;
+    player.speed = player.originalSpeed || CONFIG.PLAYER.DEFAULT_SPEED;
+    
+    // Reset speed boost powerup
+    if (maze && maze.speedBoost) {
+        console.log('SPEEDBOOST: Resetting speedboost state on respawn');
+        maze.speedBoost.active = true;
+        if (maze.speedBoost.mesh) {
+            maze.speedBoost.mesh.visible = true;
+        } else {
+            console.error('SPEEDBOOST: Mesh is missing during respawn');
+        }
+    } else {
+        console.error('SPEEDBOOST: Speed boost object missing during respawn');
+    }
+    
+    // Reset monster state and position
+    if (maze && maze.monster) {
+        console.log('MONSTER: Resetting monster state and position on respawn');
+        // Use config values for monster position
+        maze.monster.mesh.position.set(
+            LEVEL2.MONSTER.START_POSITION.x, 
+            LEVEL2.MONSTER.START_POSITION.y, 
+            LEVEL2.MONSTER.START_POSITION.z
+        );
+        maze.monster.awakened = false;
+        maze.monster.warningShown = false;
+        maze.monster.gameOver = false;
+    } else {
+        console.log('MONSTER: No monster object found during respawn');
+    }
+    
+    // Reset music to default using AudioManager
+    if (window.audioManager) {
+        console.log('AUDIO: Resetting music on respawn');
+        window.audioManager.playMusic('default');
+    } else if (window.audioController && typeof window.audioController.reset === 'function') {
+        // Legacy fallback
+        console.log('AUDIO: Using legacy audio controller for respawn');
+        window.audioController.reset();
+    }
+    
+    console.log('RESPAWN: Complete');
+}
+
+function showTrapdoorGameOver(scene, player, maze) {
     // Create and show game over message
     const gameOverMsg = document.createElement('div');
     gameOverMsg.id = 'game-over-message';
@@ -564,10 +635,8 @@ function showTrapdoorGameOver(scene, player) {
         setTimeout(() => {
             document.body.removeChild(gameOverMsg);
             
-            // Reset player position and allow movement
-            player.position.set(LEVEL2.PLAYER_START.x, LEVEL2.PLAYER_START.y, LEVEL2.PLAYER_START.z);
-            player.rotation = 0;
-            player.canMove = true;
+            // Call the centralized respawnPlayer function
+            respawnPlayer(player, maze);
         }, 500);
     });
     
@@ -575,10 +644,11 @@ function showTrapdoorGameOver(scene, player) {
     setTimeout(() => {
         gameOverMsg.style.opacity = '1';
     }, 100);
-}
+}      
+
 
 // Show game over message for spike trap death
-function showSpikeGameOver(scene, player) {
+function showSpikeGameOver(scene, player, maze) { // Added maze parameter
     // Create and show game over message
     const gameOverMsg = document.createElement('div');
     gameOverMsg.id = 'game-over-message';
@@ -632,10 +702,8 @@ function showSpikeGameOver(scene, player) {
         setTimeout(() => {
             document.body.removeChild(gameOverMsg);
             
-            // Reset player position and allow movement
-            player.position.set(LEVEL2.PLAYER_START.x, LEVEL2.PLAYER_START.y, LEVEL2.PLAYER_START.z);
-            player.rotation = 0;
-            player.canMove = true;
+            // Call the centralized respawnPlayer function
+            respawnPlayer(player, maze);
         }, 500);
     });
     
@@ -644,6 +712,7 @@ function showSpikeGameOver(scene, player) {
         gameOverMsg.style.opacity = '1';
     }, 100);
 }
+
 
 // Create the Triwizard Cup for Level 2
 function createTriwizardCupLevel2(scene, maze) {
@@ -721,8 +790,10 @@ function createTriwizardCupLevel2(scene, maze) {
 
 // Create speed boost powerup
 function createSpeedBoost(scene, maze) {
+    console.log('SPEEDBOOST: Creating new speed boost');
+    
     // Create the speed boost powerup (floating blue sphere)
-    const speedBoostGeometry = new THREE.SphereGeometry(LEVEL2.SPEEDBOOST_SIZE, 16, 16);
+    const speedBoostGeometry = new THREE.SphereGeometry(LEVEL2.SPEEDBOOST.SIZE, 16, 16);
     const speedBoostMaterial = new THREE.MeshPhongMaterial({ 
         color: '#1E88E5', // Bright blue
         emissive: '#0D47A1', // Darker blue glow
@@ -733,10 +804,11 @@ function createSpeedBoost(scene, maze) {
     
     const speedBoost = new THREE.Mesh(speedBoostGeometry, speedBoostMaterial);
     speedBoost.position.set(
-        LEVEL2.SPEEDBOOST_POSITION.x,
-        LEVEL2.SPEEDBOOST_POSITION.y + 0.8, // Float a bit above the ground
-        LEVEL2.SPEEDBOOST_POSITION.z
+        LEVEL2.SPEEDBOOST.POSITION.x,
+        LEVEL2.SPEEDBOOST.POSITION.y + LEVEL2.SPEEDBOOST.FLOAT_HEIGHT, // Float above the ground using config value
+        LEVEL2.SPEEDBOOST.POSITION.z
     );
+    console.log('SPEEDBOOST: Position set to:', speedBoost.position.x, speedBoost.position.y, speedBoost.position.z);
     
     // Add a point light to make it glow
     const speedBoostLight = new THREE.PointLight(0x1E88E5, 1, 3);
@@ -751,14 +823,16 @@ function createSpeedBoost(scene, maze) {
     
     // Add to scene
     scene.add(speedBoost);
+    console.log('SPEEDBOOST: Added to scene');
     
     // Store the speed boost in the maze object
     maze.speedBoost = {
         mesh: speedBoost,
-        position: LEVEL2.SPEEDBOOST_POSITION,
-        size: LEVEL2.SPEEDBOOST_SIZE * 1.2, // Slightly larger collision size than visual
+        position: LEVEL2.SPEEDBOOST.POSITION,
+        size: LEVEL2.SPEEDBOOST.COLLISION_SIZE, // Using predefined collision size from config
         active: true // Whether powerup is available
     };
+    console.log('SPEEDBOOST: Stored in maze object, active:', maze.speedBoost.active, 'visible:', maze.speedBoost.mesh.visible);
     
     // Add animation for the speed boost
     const originalAnimateFunction = maze.animate || function() {};
@@ -778,6 +852,12 @@ function createSpeedBoost(scene, maze) {
             
             // Rotate
             speedBoost.rotation.y += 0.02;
+            
+            // Log visibility check every 3 seconds
+            if (Math.floor(Date.now() / 3000) % 2 === 0 && !this._lastLogTime || (Date.now() - this._lastLogTime > 3000)) {
+                console.log('SPEEDBOOST ANIMATE: active:', this.speedBoost.active, 'visible:', this.speedBoost.mesh.visible);
+                this._lastLogTime = Date.now();
+            }
         }
     };
 }
@@ -806,7 +886,7 @@ function setupLevel2Controls(scene, camera, player, maze) {
 function showSpeedBoostMessage() {
     const messageDiv = document.createElement('div');
     messageDiv.id = 'speed-boost-message';
-    messageDiv.innerHTML = `<p>Speed Boost Activated!</p><p>Speed boost! Speed increased for ${LEVEL2.SPEEDBOOST_DURATION} seconds</p>`;
+    messageDiv.innerHTML = `<p>Speed Boost Activated!</p><p>Speed boost! Speed increased for ${LEVEL2.SPEEDBOOST.DURATION} seconds</p>`;
     messageDiv.style.cssText = `
         position: fixed;
         top: 20%;
@@ -887,4 +967,556 @@ function createSpeedBoostParticles(scene, position) {
     // No particles - just log that it was called
     console.log('Speed boost activated - particles disabled');
     // Function is kept for API compatibility but doesn't do anything
+}
+
+// Create a highly visible smoke texture for the monster particles
+function createSmokeTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; // Much larger texture for visibility
+    canvas.height = 128;
+    
+    const context = canvas.getContext('2d');
+    
+    // Fill with solid black background
+    context.fillStyle = 'black';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Create a bold circular pattern
+    const gradient = context.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, canvas.width / 2
+    );
+    
+    // Use high contrast white-to-black for maximum visibility
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');   // White center
+    gradient.addColorStop(0.2, 'rgba(150, 0, 0, 0.9)');    // Strong red
+    gradient.addColorStop(0.5, 'rgba(50, 0, 0, 0.8)');     // Dark red
+    gradient.addColorStop(0.8, 'rgba(20, 0, 0, 0.6)');     // Very dark red
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');          // Transparent edge
+    
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add some strong white specks for contrast
+    for (let i = 0; i < 100; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const radius = 1 + Math.random() * 3;
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        context.fill();
+    }
+    
+    // Add more red specks
+    for (let i = 0; i < 200; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const radius = 1 + Math.random() * 2;
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fillStyle = 'rgba(255, 0, 0, 0.6)';
+        context.fill();
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+// Create monster that follows the player
+function createMonster(scene, maze) {
+    // Create a monster group to hold the mesh and effects
+    const monsterGroup = new THREE.Group();
+    // Use config values for monster position
+    monsterGroup.position.set(
+        LEVEL2.MONSTER.START_POSITION.x,
+        LEVEL2.MONSTER.START_POSITION.y,
+        LEVEL2.MONSTER.START_POSITION.z
+    );
+    scene.add(monsterGroup);
+    
+    // Create a sinister looking monster with pure black body
+    const monsterGeometry = new THREE.SphereGeometry(LEVEL2.MONSTER.SIZE, 32, 32);
+    const monsterMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x000000,          // Pure black
+        emissive: 0x000000,        // No emissive
+        specular: 0x222222,        // Minimal highlight
+        shininess: 80,
+        transparent: true,
+        opacity: 1.0               // Fully opaque
+    });
+    
+    const monsterMesh = new THREE.Mesh(monsterGeometry, monsterMaterial);
+    monsterGroup.add(monsterMesh);
+    
+    // Add glowing red eyes
+    const eyeGeometry = new THREE.SphereGeometry(LEVEL2.MONSTER.EYE_SIZE, 16, 16);
+    const eyeMaterial = new THREE.MeshPhongMaterial({
+        color: 0xff0000,          // Bright red
+        emissive: 0xff5555,        // Glowing effect
+        emissiveIntensity: 1.5,    // Stronger glow
+        transparent: true,
+        opacity: 0.9
+    });
+    
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.3, 0.2, -0.6);
+    monsterGroup.add(leftEye);
+    
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.3, 0.2, -0.6);
+    monsterGroup.add(rightEye);
+    
+    // Create intense sinister smoke particles around the monster
+    const particleCount = 800; // Still plenty of particles, but slightly reduced
+    const particleGeometry = new THREE.BufferGeometry();
+    
+    // Create arrays for particle attributes
+    const positions = new Float32Array(particleCount * 3);
+    const initialPositions = new Float32Array(particleCount * 3);
+    const velocities = new Float32Array(particleCount * 3);
+    
+    // Create random positions for particles in a larger sphere around the monster
+    for (let i = 0; i < particleCount; i++) {
+        // Random positions in a much larger sphere
+        const radius = 0.6 + Math.random() * 2.4; // Between 0.6 and 3.0 - much larger radius
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+        
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+        
+        // Save initial positions
+        initialPositions[i * 3] = x;
+        initialPositions[i * 3 + 1] = y;
+        initialPositions[i * 3 + 2] = z;
+        
+        // Random velocities - much more active movement
+        velocities[i * 3] = (Math.random() - 0.5) * 0.03;
+        velocities[i * 3 + 1] = (Math.random() - 0.3) * 0.03; // Bias upward
+        velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.03;
+    }
+    
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    // Create a more intense visual effect using multiple layers of particles
+    // First layer - large dark cloud particles
+    const particleMaterial = new THREE.PointsMaterial({
+        color: 0x000000,          // Pure black smoke
+        size: 1.8,                // Large but not overwhelming particles
+        transparent: true,
+        opacity: 0.7,             // Slightly less opaque to allow layering
+        map: createSmokeTexture(),
+        blending: THREE.NormalBlending, // Normal blending instead of additive
+        depthWrite: false,
+        sizeAttenuation: true     // Size changes with distance for more realistic effect
+    });
+    
+    // Add a second layer of red glowing particles for a sinister effect
+    const redParticleGeometry = new THREE.BufferGeometry();
+    const redPositions = new Float32Array(particleCount/2 * 3);
+    
+    for (let i = 0; i < particleCount/2; i++) {
+        const radius = 0.9 + Math.random() * 1.8;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        
+        redPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        redPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        redPositions[i * 3 + 2] = radius * Math.cos(phi);
+    }
+    
+    redParticleGeometry.setAttribute('position', new THREE.BufferAttribute(redPositions, 3));
+    
+    const redParticleMaterial = new THREE.PointsMaterial({
+        color: 0x330000,          // Dark red
+        size: 0.8,                // Large particles
+        transparent: true,
+        opacity: 0.5,
+        map: createSmokeTexture(),
+        blending: THREE.AdditiveBlending, // Additive for glow effect
+        depthWrite: false,
+        sizeAttenuation: true
+    });
+    
+    const redParticles = new THREE.Points(redParticleGeometry, redParticleMaterial);
+    monsterGroup.add(redParticles);
+    
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    monsterGroup.add(particles);
+    
+    // Add a third layer of GIANT smoke particles to create an unmistakable cloud
+    const giantParticleGeometry = new THREE.BufferGeometry();
+    const giantPositions = new Float32Array(200 * 3); // Fewer but much larger particles
+    
+    for (let i = 0; i < 200; i++) {
+        // Position these in a larger sphere around the monster
+        const radius = 1.5 + Math.random() * 3.0; // 1.5 to 4.5 units from center
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        
+        giantPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        giantPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        giantPositions[i * 3 + 2] = radius * Math.cos(phi);
+    }
+    
+    giantParticleGeometry.setAttribute('position', new THREE.BufferAttribute(giantPositions, 3));
+    
+    const giantParticleMaterial = new THREE.PointsMaterial({
+        color: 0x330000,           // Dark red
+        size: 3.5,                 // Large particles, but slightly reduced
+        transparent: true,
+        opacity: 0.6,
+        map: createSmokeTexture(),
+        blending: THREE.NormalBlending,
+        depthWrite: false,
+        sizeAttenuation: true
+    });
+    
+    const giantParticles = new THREE.Points(giantParticleGeometry, giantParticleMaterial);
+    monsterGroup.add(giantParticles);
+    
+    // Store particle data for animation
+    const particleSystem = {
+        points: particles,
+        geometry: particleGeometry,
+        velocities: velocities,
+        initialPositions: initialPositions
+    };
+    
+    if (!maze.particles) {
+        maze.particles = [];
+    }
+    maze.particles.push(particleSystem);
+    
+    console.log('Enhanced monster created at position:', monsterGroup.position);
+    
+    // Store monster data in the maze object
+    maze.monster = {
+        mesh: monsterGroup,
+        coreMesh: monsterMesh,
+        position: monsterGroup.position,
+        awakened: false,           // Starts dormant until player gets close
+        detectionRadius: LEVEL2.MONSTER.DETECTION_RADIUS,  // Using config value
+        killRadius: 1.6,           // Increased kill radius to ensure collision works
+        speed: 0.035,              // Movement speed (reduced for better gameplay balance)
+        warningShown: false,       // Track if warning has been shown
+        sceneRef: scene,           // Store references for the global update function
+        playerRef: player,         // Store references for the global update function
+        mazeRef: maze,             // Store references for the global update function
+        particleSystem: particleSystem, // Reference to the particle system
+        eyes: { left: leftEye, right: rightEye } // Reference to the eyes for animation
+    };
+    
+    // Make monster update function accessible globally
+    window.updateMonsterLevel2 = function() {
+        if (maze.monster) {
+            updateMonster(scene, player, maze);
+        }
+    };
+    
+    console.log('Monster initialized with global update function: updateMonsterLevel2');
+    console.log('Monster initial position:', maze.monster.position.x, maze.monster.position.y, maze.monster.position.z);
+    console.log('Detection radius:', maze.monster.detectionRadius);
+}
+
+// Update monster position and check for player collision
+function updateMonster(scene, player, maze) {
+    // Skip if no monster or player can't move (already game over)
+    if (!maze.monster || !player.canMove || (maze.monster && maze.monster.gameOver)) {
+        return;
+    }
+    
+    // Store references in monster object to ensure they're available for game over
+    maze.monster.sceneRef = scene || maze.monster.sceneRef;
+    maze.monster.playerRef = player;
+    maze.monster.mazeRef = maze;
+    
+    const monster = maze.monster;
+    const monsterPos = monster.mesh.position;
+    
+    // Calculate distance to player
+    const distanceToPlayer = monsterPos.distanceTo(player.position);
+    
+    // Check if monster should wake up
+    if (!monster.awakened && distanceToPlayer < monster.detectionRadius) {
+        monster.awakened = true;
+        console.log('Monster awakened! Distance to player:', distanceToPlayer);
+        
+        // Change music to sinister when monster awakens
+        console.log('Monster detected player - changing to sinister music');
+        
+        // Use AudioManager to play the sinister music
+        try {
+            if (window.audioManager) {
+                console.log('Using AudioManager to change music');
+                window.audioManager.playMusic('sinister');
+            } else {
+                console.error('AudioManager not available');
+                
+                // Fallback to legacy approach if AudioManager is not available
+                console.log('Falling back to legacy audio approach');
+                
+                // First, stop current background music
+                if (typeof audio !== 'undefined' && audio.backgroundMusic) {
+                    console.log('Stopping audio.backgroundMusic');
+                    audio.backgroundMusic.pause();
+                    audio.backgroundMusic.currentTime = 0;
+                }
+                
+                // Create and play new sinister music
+                const sinisterMusic = new Audio('sinister_background_score.mp3');
+                sinisterMusic.loop = true;
+                sinisterMusic.volume = 0.7;
+                sinisterMusic.play().catch(e => {
+                    console.error('Error playing sinister music:', e);
+                });
+                
+                // Update the global audio reference
+                if (typeof audio !== 'undefined') {
+                    audio.backgroundMusic = sinisterMusic;
+                }
+            }
+        
+        } catch (error) {
+            console.error('Exception changing music:', error);
+        }
+        
+        // Show warning if not already shown
+        if (!monster.warningShown) {
+            showMonsterWarning();
+            monster.warningShown = true;
+            console.log('Monster warning shown to player');
+        } else {
+            console.log('Warning already shown, not showing again');
+        }
+    }
+    
+    // Move monster toward player if awakened
+    if (monster.awakened) {
+        // Calculate direction toward player
+        const direction = new THREE.Vector3().subVectors(player.position, monsterPos).normalize();
+        
+        // Move monster in that direction
+        monsterPos.x += direction.x * monster.speed;
+        monsterPos.y = 1.5; // Keep at consistent height
+        monsterPos.z += direction.z * monster.speed;
+        
+        // Animate the monster's eyes for a more menacing effect
+        if (monster.eyes) {
+            // Make eyes pulse with intensity based on distance to player
+            const pulseFactor = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
+            const intensityFactor = Math.max(0.6, Math.min(1.5, 4 / distanceToPlayer));
+            
+            // Left eye animation
+            if (monster.eyes.left) {
+                monster.eyes.left.scale.set(
+                    pulseFactor * intensityFactor,
+                    pulseFactor * intensityFactor,
+                    pulseFactor * intensityFactor
+                );
+                monster.eyes.left.material.opacity = 0.7 + Math.sin(Date.now() * 0.003) * 0.3;
+            }
+            
+            // Right eye animation
+            if (monster.eyes.right) {
+                monster.eyes.right.scale.set(
+                    pulseFactor * intensityFactor,
+                    pulseFactor * intensityFactor,
+                    pulseFactor * intensityFactor
+                );
+                monster.eyes.right.material.opacity = 0.7 + Math.sin(Date.now() * 0.003) * 0.3;
+            }
+        }
+        
+        // Check if monster caught player
+        // Special calculation for Y-axis since player height is different from monster
+        const horizontalDistance = Math.sqrt(
+            Math.pow(player.position.x - monsterPos.x, 2) +
+            Math.pow(player.position.z - monsterPos.z, 2)
+        );
+        
+        if (horizontalDistance < monster.killRadius) {
+            // Prevent further movement
+            player.canMove = false;
+            
+            // Create a simple game over message directly
+            const gameOverMsg = document.createElement('div');
+            gameOverMsg.id = 'monster-game-over';
+            gameOverMsg.innerHTML = `
+                <p>Game Over!</p>
+                <p>The dark entity has consumed you!</p>
+                <button id="monster-restart-btn">Restart Level</button>
+            `;
+            gameOverMsg.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 10px;
+                font-size: 24px;
+                font-family: Arial, sans-serif;
+                text-align: center;
+                z-index: 1000;
+            `;
+            document.body.appendChild(gameOverMsg);
+            
+            // Style the button
+            const restartBtn = document.getElementById('monster-restart-btn');
+            restartBtn.style.cssText = `
+                background-color: #4CAF50;
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                display: inline-block;
+                font-size: 16px;
+                margin: 10px 2px;
+                cursor: pointer;
+                border-radius: 5px;
+            `;
+            
+            // Add restart functionality
+            restartBtn.addEventListener('click', function() {
+                // Remove the game over message
+                if (document.body.contains(gameOverMsg)) {
+                    document.body.removeChild(gameOverMsg);
+                }
+                
+                console.log('Calling centralized respawn function from inline monster handler');
+                // Call the centralized respawnPlayer function
+                respawnPlayer(player, maze);
+            });
+            
+            // Disable further monster updates until restart
+            monster.gameOver = true;
+        }
+    }
+}
+
+// Show warning when monster first detects player
+function showMonsterWarning() {
+    console.log('FUNCTION CALLED: showMonsterWarning()');
+    
+    // Check if a warning is already showing
+    const existingWarning = document.getElementById('monster-warning');
+    if (existingWarning) {
+        console.log('Warning already exists, removing old one');
+        document.body.removeChild(existingWarning);
+    }
+    
+    const warningDiv = document.createElement('div');
+    warningDiv.id = 'monster-warning';
+    warningDiv.innerHTML = `<p>RUN! A dark creature has spotted you!</p>`;
+    console.log('Created warning div with id:', warningDiv.id);
+    warningDiv.style.cssText = `
+        position: fixed;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(128, 0, 0, 0.7);
+        color: white;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-family: 'MedievalSharp', cursive;
+        text-align: center;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    `;
+    document.body.appendChild(warningDiv);
+    
+    // Fade in
+    setTimeout(() => {
+        warningDiv.style.opacity = '1';
+    }, 100);
+    
+    // Fade out and remove after 4 seconds
+    setTimeout(() => {
+        warningDiv.style.opacity = '0';
+        setTimeout(() => {
+            if (document.body.contains(warningDiv)) {
+                document.body.removeChild(warningDiv);
+            }
+        }, 500);
+    }, 4000);
+}
+
+// Show game over message when caught by monster
+function showMonsterGameOver(scene, player, maze) {
+    // Create and show game over message
+    const gameOverMsg = document.createElement('div');
+    gameOverMsg.id = 'game-over-message';
+    gameOverMsg.innerHTML = `
+        <p>Game Over!</p>
+        <p>The dark entity has consumed you!</p>
+        <p>Next time, keep your distance...</p>
+        <button id="restart-btn" class="game-button">Restart Level</button>
+    `;
+    gameOverMsg.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px 40px;
+        border-radius: 10px;
+        font-size: 24px;
+        font-family: 'MedievalSharp', cursive;
+        text-align: center;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    `;
+    document.body.appendChild(gameOverMsg);
+    
+    // Add button styling
+    const restartBtn = document.getElementById('restart-btn');
+    restartBtn.style.cssText = `
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 10px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+        font-family: 'MedievalSharp', cursive;
+    `;
+    
+    // Add click event to restart button
+    restartBtn.addEventListener('click', () => {
+        console.log('Restart button clicked');
+        // Fade out message
+        gameOverMsg.style.opacity = '0';
+        
+        // Remove message after fade out
+        setTimeout(() => {
+            if (document.body.contains(gameOverMsg)) {
+                document.body.removeChild(gameOverMsg);
+            }
+            
+            console.log('Calling centralized respawn function');
+            // Call the centralized respawnPlayer function
+            respawnPlayer(player, maze);
+        }, 500);
+    });
+    
+    // Fade in the message
+    setTimeout(() => {
+        gameOverMsg.style.opacity = '1';
+    }, 100);
 }

@@ -6,18 +6,35 @@ const COLORS = {
     CUP: '#ffca28'        // Golden/yellow for Triwizard Cup
 };
 
+// Parse URL parameters for portal functionality
+const urlParams = new URLSearchParams(window.location.search);
+const refParam = urlParams.get('ref');
+const portalParam = urlParams.get('portal');
+const showPortal = refParam && portalParam === 'true';
+
+// Debug log URL parameters
+console.log('URL Parameters:', {
+    ref: refParam,
+    portal: portalParam,
+    showPortal: showPortal
+});
+
 // Game variables
 let scene, camera, debugCamera, renderer;
 let isDebugView = false; // Flag to track if we're in debug view
 let gameState = {
     currentLevel: 1,      // Current game level
     maxLevel: 2,          // Maximum available level
-    isTransitioning: false // Flag for level transition animations
+    isTransitioning: false, // Flag for level transition animations
+    hasPortal: showPortal, // Whether to show the return portal
+    portalDestination: refParam || '', // Where the portal should send the player
+    portalCooldown: false, // Whether the portal is in cooldown after clicking No
+    portalCooldownTime: 3000 // Cooldown time in milliseconds (3 seconds)
 };
 let player = {
     height: 1.8,          // Player height in units
     speed: 0.1,           // Player movement speed
-    turnSpeed: 0.03,      // Player rotation speed
+    turnSpeed: 0.015,     // Reduced player rotation speed for smoother joystick control
     position: new THREE.Vector3(0, 0, 10), // Start position
     rotation: 0,          // Current rotation angle
     canMove: true         // Whether player can move
@@ -31,47 +48,19 @@ let maze = {
 };
 let keys = {              // Track key presses
     up: false,
+    down: false,
     left: false,
     right: false
 };
-// Global audio controller
-let audio = {             // Audio elements
-    backgroundMusic: null,  // Background music
-    originalRate: 1.0     // Original playback rate
-};
+// Note: Audio is now managed by AudioManager in audio.js
+// This is kept for backward compatibility
+let audio = {};
 
-// Export audio control functions to window object so they can be accessed from any JS file
-window.audioController = {
-    speedUp: function(rate) {
-        if (audio && audio.backgroundMusic) {
-            // Store original rate if not already stored
-            if (!audio.originalRate) {
-                audio.originalRate = audio.backgroundMusic.playbackRate || 1.0;
-            }
-            audio.backgroundMusic.playbackRate = rate;
-            return true;
-        }
-        return false;
-    },
-    reset: function() {
-        if (audio && audio.backgroundMusic) {
-            audio.backgroundMusic.playbackRate = audio.originalRate || 1.0;
-            return true;
-        }
-        return false;
-    },
-    getCurrentRate: function() {
-        if (audio && audio.backgroundMusic) {
-            return audio.backgroundMusic.playbackRate;
-        }
-        return 1.0;
-    }
-};
 
 // Initialize the game
 function init() {
-    // Set up background music
-    setupBackgroundMusic();
+    // Initialize the audio system
+    window.audioManager.init();
     
     // Setup tutorial popup
     setupTutorial();
@@ -188,7 +177,7 @@ function clearMaze() {
 // Create Level 1 maze
 function createLevel1Maze(wallMaterial) {
     // Create maze walls (simple straight path with walls on both sides)
-    const wallGeometry = new THREE.BoxGeometry(1, 3, 22); // Extended length to connect with back wall
+    const wallGeometry = new THREE.BoxGeometry(1, 3, 35); // Extended length to connect with back wall
     
     // Left wall
     const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
@@ -197,7 +186,7 @@ function createLevel1Maze(wallMaterial) {
     maze.walls.push({
         mesh: leftWall,
         min: new THREE.Vector3(-3.5, 0, -10.5),
-        max: new THREE.Vector3(-2.5, 3, 11.5)
+        max: new THREE.Vector3(-2.5, 3, 17.5)
     });
     
     // Right wall
@@ -207,18 +196,18 @@ function createLevel1Maze(wallMaterial) {
     maze.walls.push({
         mesh: rightWall,
         min: new THREE.Vector3(2.5, 0, -10.5),
-        max: new THREE.Vector3(3.5, 3, 11.5)
+        max: new THREE.Vector3(3.5, 3, 17.5)
     });
     
     // Back wall (to prevent player from going backwards)
     const backWallGeometry = new THREE.BoxGeometry(7, 3, 1);
     const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
-    backWall.position.set(0, 1.5, 11); // Position it just behind the player's starting point
+    backWall.position.set(0, 1.5, 18); // Position it just behind the player's starting point
     scene.add(backWall);
     maze.walls.push({
         mesh: backWall,
-        min: new THREE.Vector3(-3.5, 0, 10.5),
-        max: new THREE.Vector3(3.5, 3, 11.5)
+        min: new THREE.Vector3(-3.5, 0, 17.5),
+        max: new THREE.Vector3(3.5, 3, 18.5)
     });
     
     // Add end wall (behind the trophy)
@@ -231,6 +220,11 @@ function createLevel1Maze(wallMaterial) {
         min: new THREE.Vector3(-3.5, 0, -11.5),
         max: new THREE.Vector3(3.5, 3, -10.5)
     });
+    
+    // Create return portal if URL parameters indicate it should be shown
+    if (gameState.hasPortal) {
+        createReturnPortal();
+    }
 }
 
 // Helper function to create a wall for Level 1
@@ -347,6 +341,9 @@ function handleKeyDown(event) {
         case 'ArrowUp':
             keys.up = true;
             break;
+        case 'ArrowDown':
+            keys.down = true;
+            break;
         case 'ArrowLeft':
             keys.left = true;
             break;
@@ -384,6 +381,9 @@ function handleKeyUp(event) {
         case 'ArrowUp':
             keys.up = false;
             break;
+        case 'ArrowDown':
+            keys.down = false;
+            break;
         case 'ArrowLeft':
             keys.left = false;
             break;
@@ -393,49 +393,94 @@ function handleKeyUp(event) {
     }
 }
 
-// Set up mobile touch controls
+// Set up mobile joystick controls
 function setupMobileControls() {
-    const forwardBtn = document.getElementById('forward-btn');
-    const leftBtn = document.getElementById('left-btn');
-    const rightBtn = document.getElementById('right-btn');
+    // Only setup joystick on touch devices
+    if (!('ontouchstart' in window)) return;
     
-    // Forward button
-    forwardBtn.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        keys.up = true;
+    // Check if nipplejs is loaded (try both possible names)
+    if (typeof window.nipplejs === 'undefined' && typeof window.nipple === 'undefined') {
+        console.error('nipplejs library not loaded. Mobile controls will be disabled.');
+        return;
+    }
+    
+    // Get the nipplejs object (different libraries might expose it differently)
+    const nippleJS = window.nipplejs || window.nipple;
+    
+    const joystickOptions = {
+        zone: document.getElementById('joystick-zone'),
+        mode: 'static',
+        position: { left: '50%', bottom: '0' },
+        color: 'rgba(255, 255, 255, 0.5)',  // Subtle white color
+        size: 120,
+        restOpacity: 0.5,          // Semi-transparent when not in use
+        fadeTime: 100,
+        lockX: false,              // Allow both X and Y movement
+        lockY: false,
+        catchDistance: 100          // More forgiving catch distance
+    };
+    
+    // Create the joystick
+    const manager = nippleJS.create(joystickOptions);
+    
+    // Handle joystick movement
+    manager.on('move', function(evt, data) {
+        if (data.angle) {
+            const angle = data.angle.radian;
+            const distance = data.distance || 0;
+            
+            // Minimum distance threshold to do anything
+            const minThreshold = 20;
+            
+            // Clear all keys first
+            keys.up = false;
+            keys.down = false;
+            keys.left = false;
+            keys.right = false;
+            
+            if (distance >= minThreshold) {
+                // Very narrow angle ranges for forward/backward movement
+                // Forward - strict south position (around 0.5π)
+                if (angle > Math.PI * 0.45 && angle < Math.PI * 0.55) {
+                    keys.up = true;     // Move forward
+                } 
+                // Backward - strict north position (around 1.5π)
+                else if (angle > Math.PI * 1.45 && angle < Math.PI * 1.55) {
+                    keys.down = true;    // Move backward
+                }
+                // Any other angle = rotation
+                else {
+                    // Use the vector data from the joystick (more reliable than angle)
+                    const vector = data.vector || {};
+                    
+                    // Left/right based on x component of the vector
+                    if (vector.x < 0) {
+                        // Negative x = left side of joystick
+                        keys.left = true;   // Turn left
+                    } else {
+                        // Positive x = right side of joystick 
+                        keys.right = true;  // Turn right
+                    }
+                }
+            }
+        }
     });
-    forwardBtn.addEventListener('touchend', function(e) {
-        e.preventDefault();
+    
+    // Reset all keys when joystick is released
+    manager.on('end', function() {
         keys.up = false;
-    });
-    
-    // Left button
-    leftBtn.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        keys.left = true;
-    });
-    leftBtn.addEventListener('touchend', function(e) {
-        e.preventDefault();
+        keys.down = false;
         keys.left = false;
-    });
-    
-    // Right button
-    rightBtn.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        keys.right = true;
-    });
-    rightBtn.addEventListener('touchend', function(e) {
-        e.preventDefault();
         keys.right = false;
     });
     
-    // Also add mouse events for testing on desktop
-    forwardBtn.addEventListener('mousedown', function() { keys.up = true; });
-    forwardBtn.addEventListener('mouseup', function() { keys.up = false; });
-    leftBtn.addEventListener('mousedown', function() { keys.left = true; });
-    leftBtn.addEventListener('mouseup', function() { keys.left = false; });
-    rightBtn.addEventListener('mousedown', function() { keys.right = true; });
-    rightBtn.addEventListener('mouseup', function() { keys.right = false; });
+    // Handle any errors or joystick being destroyed
+    manager.on('destroyed', function() {
+        keys.up = false;
+        keys.down = false;
+        keys.left = false;
+        keys.right = false;
+    });
 }
 
 // Check if player has reached the Triwizard Cup
@@ -443,6 +488,28 @@ function checkWinCondition() {
     const distanceToCup = player.position.distanceTo(maze.cup.position);
     if (distanceToCup < 1.5 && !gameState.isTransitioning) {
         player.canMove = false;
+        
+        // Play success fanfare and mute background music using AudioManager
+        if (window.audioManager) {
+            // Stop all other music and play the fanfare sound
+            window.audioManager.stopAll();
+            window.audioManager.playSound('fanfare');
+            console.log('Playing victory fanfare via AudioManager');
+        } else {
+            // Fallback to legacy approach
+            console.log('Falling back to legacy audio approach for fanfare');
+            
+            // Pause background music
+            if (audio.backgroundMusic) {
+                audio.backgroundMusic.pause();
+            }
+            
+            // Play the fanfare sound
+            if (audio.fanfare) {
+                audio.fanfare.currentTime = 0;
+                audio.fanfare.play().catch(e => console.log('Could not play fanfare:', e));
+            }
+        }
         
         // Check if there's a next level
         if (gameState.currentLevel < gameState.maxLevel) {
@@ -548,6 +615,19 @@ function startLevelTransition() {
             // Reset transition flag
             gameState.isTransitioning = false;
             
+            // Restart background music for the next level using AudioManager
+            if (window.audioManager) {
+                console.log('Restarting level music with AudioManager');
+                window.audioManager.playMusic('default');
+            } else {
+                // Fallback to legacy approach
+                console.log('Falling back to legacy audio for level transition');
+                if (audio.backgroundMusic) {
+                    audio.backgroundMusic.currentTime = 0;
+                    audio.backgroundMusic.play().catch(e => console.log('Could not restart music:', e));
+                }
+            }
+            
             // Allow player to move again after slight delay to ensure level is loaded
             setTimeout(() => {
                 player.canMove = true;
@@ -565,8 +645,12 @@ function startLevelTransition() {
 function showLevelMessage(level = 1) {
     const levelMessage = document.getElementById('level-message');
     
-    // Update text if level is not 1
-    if (level > 1) {
+    // Get level name from config
+    if (level === 1) {
+        levelMessage.innerText = LEVEL1.NAME; // 'Level 1 (Tutorial)'
+    } else if (level === 2) {
+        levelMessage.innerText = LEVEL2.NAME; // 'Level 2'
+    } else {
         levelMessage.innerText = `Level ${level}`;
     }
     
@@ -623,13 +707,14 @@ function updatePlayer() {
         player.rotation -= player.turnSpeed;
     }
     
-    // Move player forward
-    if (keys.up) {
-        const moveX = -Math.sin(player.rotation) * player.speed;
-        const moveZ = -Math.cos(player.rotation) * player.speed;
+    // Move player forward/backward
+    if (keys.up || keys.down) {
+        // Determine direction (forward or backward)
+        const directionMultiplier = keys.up ? 1 : -1;
         
-        // Log movement values for debugging
-        // console.log(`Movement: rotation=${player.rotation.toFixed(4)}, moveX=${moveX.toFixed(4)}, moveZ=${moveZ.toFixed(4)}`);
+        // Calculate movement vector (negative for forward because of coordinate system)
+        const moveX = -Math.sin(player.rotation) * player.speed * directionMultiplier;
+        const moveZ = -Math.cos(player.rotation) * player.speed * directionMultiplier;
         
         // Calculate new position
         const newPosition = new THREE.Vector3(
@@ -637,7 +722,6 @@ function updatePlayer() {
             player.position.y,
             player.position.z + moveZ
         );
-
         
         // Check for collisions
         const collision = checkCollisions(newPosition);
@@ -660,6 +744,19 @@ function updatePlayer() {
     
     // Check if player has reached the cup
     checkWinCondition();
+    
+    // Check if player has entered the return portal in Level 1
+    if (gameState.currentLevel === 1 && gameState.hasPortal && maze.returnPortal) {
+        const inPortal = maze.returnPortal.checkCollision(player.position);
+        
+        if (inPortal && !gameState.portalCooldown) {
+            // Only show portal confirmation if not already showing and not in cooldown
+            const confirmationDialog = document.getElementById('portal-confirmation');
+            if (confirmationDialog.style.display !== 'block') {
+                maze.returnPortal.showConfirmation();
+            }
+        }
+    }
 }
 
 // Animation loop
@@ -681,6 +778,12 @@ function animate() {
     }
     
     updatePlayer();
+    
+    // Update monster if we're in level 2 and the update function exists
+    if (gameState.currentLevel === 2 && typeof window.updateMonsterLevel2 === 'function') {
+        window.updateMonsterLevel2();
+    }
+    
     // Render with the appropriate camera based on debug mode
     renderer.render(scene, isDebugView ? debugCamera : camera);
 }
@@ -717,119 +820,40 @@ function updateParticles(deltaTime) {
     });
 }
 
-// Setup background music
+// Setup background music - functionality moved to AudioManager in audio.js
 function setupBackgroundMusic() {
-    // Create audio element
-    audio.backgroundMusic = new Audio('Whispers in the Hall.mp3');
-    audio.backgroundMusic.loop = true;
-    audio.backgroundMusic.volume = 0.6; // Set to 60% volume
-    audio.backgroundMusic.defaultPlaybackRate = 1.0; // Store default rate
+    // This function is preserved for backward compatibility
+    // It now forwards to the AudioManager
+    console.log('setupBackgroundMusic called - delegating to AudioManager');
     
-    // Try to autoplay immediately
-    const playPromise = audio.backgroundMusic.play();
-    
-    // Handle autoplay blocking (common in modern browsers)
-    if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.log('Autoplay prevented by browser, using touch and interaction events as fallback');
-            
-            // For mobile: add touch event listeners for first interaction
-            const startAudio = () => {
-                audio.backgroundMusic.play();
-                // Remove all event listeners after first successful play
-                document.removeEventListener('touchstart', startAudio);
-                document.removeEventListener('touchend', startAudio);
-                document.removeEventListener('click', startAudio);
-                document.removeEventListener('keydown', startAudio);
-            };
-            
-            // Add multiple event listeners to catch any type of interaction
-            document.addEventListener('touchstart', startAudio, { once: true });
-            document.addEventListener('touchend', startAudio, { once: true });
-            document.addEventListener('click', startAudio, { once: true });
-            document.addEventListener('keydown', startAudio, { once: true });
-        });
+    if (window.audioManager) {
+        // The audio manager will automatically handle autoplay restrictions and user interaction
+        
+        // Set the audio object references for backward compatibility
+        audio.backgroundMusic = window.audioManager.tracks['default'];
+        audio.fanfare = window.audioManager.soundEffects['fanfare'];
+    } else {
+        console.error('AudioManager not initialized');
     }
-    
-    // Add global functions to control music speed with extensive logging
-    window.speedUpBackgroundMusic = function(rate) {
-        console.log('DEBUG: speedUpBackgroundMusic called with rate:', rate);
-        console.log('DEBUG: audio object exists:', !!audio);
-        
-        if (audio) {
-            console.log('DEBUG: audio contents:', Object.keys(audio));
-            console.log('DEBUG: backgroundMusic exists:', !!audio.backgroundMusic);
-        }
-        
-        if (audio && audio.backgroundMusic) {
-            console.log('DEBUG: Current audio element:', audio.backgroundMusic);
-            console.log('DEBUG: Current playbackRate before change:', audio.backgroundMusic.playbackRate);
-            console.log('DEBUG: playbackRate property descriptor:', 
-                         Object.getOwnPropertyDescriptor(audio.backgroundMusic, 'playbackRate'));
-            
-            try {
-                // Store original rate if not already stored
-                if (!audio.backgroundMusic.hasOwnProperty('originalRate')) {
-                    audio.backgroundMusic.originalRate = audio.backgroundMusic.playbackRate || 1.0;
-                    console.log('DEBUG: Stored original rate:', audio.backgroundMusic.originalRate);
-                } else {
-                    console.log('DEBUG: Original rate already stored:', audio.backgroundMusic.originalRate);
-                }
-                
-                // Set new rate
-                console.log('DEBUG: Attempting to set playbackRate to:', rate);
-                audio.backgroundMusic.playbackRate = rate;
-                
-                // Verify the change
-                console.log('DEBUG: PlaybackRate after change attempt:', audio.backgroundMusic.playbackRate);
-                console.log('DEBUG: Is rate changed?', audio.backgroundMusic.playbackRate === rate);
-                
-                // Try alternative method if the first method didn't work
-                if (audio.backgroundMusic.playbackRate !== rate) {
-                    console.log('DEBUG: First attempt failed, trying alternative method');
-                    Object.defineProperty(audio.backgroundMusic, 'playbackRate', {
-                        value: rate,
-                        writable: true
-                    });
-                    console.log('DEBUG: PlaybackRate after second attempt:', audio.backgroundMusic.playbackRate);
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('DEBUG: Error changing music speed:', error);
-                console.error('DEBUG: Error details:', error.stack);
-                return false;
-            }
-        } else {
-            console.log('DEBUG: Audio or backgroundMusic not available');
-            return false;
-        }
-    };
-    
-    window.resetBackgroundMusicSpeed = function() {
-        console.log('DEBUG: resetBackgroundMusicSpeed called');
+}
+
+// Speed control functions are now handled by AudioManager
+
+window.resetBackgroundMusicSpeed = function() {
         
         if (audio && audio.backgroundMusic) {
             try {
                 const originalRate = audio.backgroundMusic.originalRate || 1.0;
-                console.log('DEBUG: Attempting to reset to original rate:', originalRate);
                 
-                audio.backgroundMusic.playbackRate = originalRate;
-                console.log('DEBUG: PlaybackRate after reset attempt:', audio.backgroundMusic.playbackRate);
-                console.log('DEBUG: Is rate reset?', audio.backgroundMusic.playbackRate === originalRate);
-                
+                audio.backgroundMusic.playbackRate = originalRate;                
                 return true;
             } catch (error) {
-                console.error('DEBUG: Error resetting music speed:', error);
-                console.error('DEBUG: Error details:', error.stack);
                 return false;
             }
         } else {
-            console.log('DEBUG: Audio or backgroundMusic not available for reset');
             return false;
         }
     };
-}
 
 // Setup tutorial popup
 function setupTutorial() {
@@ -874,6 +898,156 @@ function setupTutorial() {
         }
     });
 }
+
+// Setup portal button for GameJam redirect
+function setupPortalButton() {
+    const portalButton = document.getElementById('portal-button');
+    portalButton.addEventListener('click', function() {
+        // Redirect to the GameJam portal with ref parameter
+        window.location.href = 'https://portal.pieter.com?ref=https://advaithsridhar.blog/games/maze.html';
+    });
+}
+
+// Create a portal that allows players to return to the previous game
+function createReturnPortal() {
+    console.log('Creating return portal to:', gameState.portalDestination);
+    
+    // Create a more visible portal
+    console.log('Creating portal at position:', LEVEL1.PORTAL.POSITION);
+    
+    // Create a floating disc for the portal
+    const portalGeometry = new THREE.CylinderGeometry(LEVEL1.PORTAL.SIZE, LEVEL1.PORTAL.SIZE, 0.2, 32);
+    const portalMaterial = new THREE.MeshPhongMaterial({ 
+        color: LEVEL1.PORTAL.COLOR, 
+        emissive: LEVEL1.PORTAL.COLOR,
+        emissiveIntensity: 0.8,
+        transparent: true,
+        opacity: 0.9
+    });
+    
+    const portalMesh = new THREE.Mesh(portalGeometry, portalMaterial);
+    portalMesh.rotation.x = Math.PI / 2; // Rotate to be flat
+    portalMesh.position.set(
+        LEVEL1.PORTAL.POSITION.x,
+        LEVEL1.PORTAL.POSITION.y + 1.0, // Float 1 meter above the ground
+        LEVEL1.PORTAL.POSITION.z
+    );
+    scene.add(portalMesh);
+    
+    // Add a stronger point light to make portal glow
+    const portalLight = new THREE.PointLight(LEVEL1.PORTAL.COLOR, 2, 10);
+    portalLight.position.set(
+        LEVEL1.PORTAL.POSITION.x,
+        LEVEL1.PORTAL.POSITION.y + 1.0,
+        LEVEL1.PORTAL.POSITION.z
+    );
+    scene.add(portalLight);
+    
+    // Add a second portal ring for better visibility
+    const outerRingGeometry = new THREE.TorusGeometry(LEVEL1.PORTAL.SIZE + 0.2, 0.1, 16, 32);
+    const outerRingMaterial = new THREE.MeshPhongMaterial({
+        color: '#FFFFFF', 
+        emissive: '#FFFFFF',
+        emissiveIntensity: 1.0
+    });
+    const outerRing = new THREE.Mesh(outerRingGeometry, outerRingMaterial);
+    outerRing.position.set(
+        LEVEL1.PORTAL.POSITION.x,
+        LEVEL1.PORTAL.POSITION.y + 1.0,
+        LEVEL1.PORTAL.POSITION.z
+    );
+    scene.add(outerRing);
+    
+    // No particle system for the portal
+    
+    // Store portal information for collision detection
+    maze.returnPortal = {
+        position: new THREE.Vector3(
+            LEVEL1.PORTAL.POSITION.x,
+            LEVEL1.PORTAL.POSITION.y + 1.0, // Match the floating height
+            LEVEL1.PORTAL.POSITION.z
+        ),
+        size: LEVEL1.PORTAL.COLLISION_SIZE,
+        mesh: portalMesh,
+        light: portalLight,
+        outerRing: outerRing,
+        destination: gameState.portalDestination,
+        checkCollision: function(playerPosition) {
+            // Calculate horizontal distance only (ignoring height difference since it's floating)
+            const dx = Math.abs(playerPosition.x - this.position.x);
+            const dz = Math.abs(playerPosition.z - this.position.z);
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            
+            console.log('Player distance to portal:', distance, 'Required:', this.size);
+            
+            // Check if player is within portal radius
+            return distance < this.size;
+        },
+        showConfirmation: function() {
+            // Pause player movement
+            player.canMove = false;
+            
+            // Show the portal confirmation dialog
+            const confirmationDialog = document.getElementById('portal-confirmation');
+            confirmationDialog.style.display = 'block';
+            
+            // Setup button listeners
+            const yesButton = document.getElementById('portal-yes');
+            const noButton = document.getElementById('portal-no');
+            
+            // Remove any existing event listeners to prevent duplicates
+            const newYesButton = yesButton.cloneNode(true);
+            const newNoButton = noButton.cloneNode(true);
+            yesButton.parentNode.replaceChild(newYesButton, yesButton);
+            noButton.parentNode.replaceChild(newNoButton, noButton);
+            
+            // Make sure the button text is correct
+            newYesButton.textContent = 'Yes';
+            newNoButton.textContent = 'No';
+            
+            // Setup new event listeners
+            newYesButton.addEventListener('click', () => {
+                confirmationDialog.style.display = 'none';
+                // Redirect to the original game URL
+                window.location.href = this.destination;
+            });
+            
+            newNoButton.addEventListener('click', () => {
+                confirmationDialog.style.display = 'none';
+                // Resume player movement
+                player.canMove = true;
+                
+                // Set portal cooldown to prevent immediate reactivation
+                gameState.portalCooldown = true;
+                console.log('Portal on cooldown for ' + (gameState.portalCooldownTime/1000) + ' seconds');
+                
+                // After cooldown period, allow portal activation again
+                setTimeout(() => {
+                    gameState.portalCooldown = false;
+                    console.log('Portal cooldown ended');
+                    
+                    // Only if player is far enough away from the portal
+                    if (maze.returnPortal && maze.returnPortal.checkCollision(player.position)) {
+                        console.log('Player still in portal - keeping cooldown active');
+                        gameState.portalCooldown = true;
+                        
+                        // Check every half second if player has moved away
+                        const checkInterval = setInterval(() => {
+                            if (!maze.returnPortal.checkCollision(player.position)) {
+                                gameState.portalCooldown = false;
+                                console.log('Player moved away from portal - cooldown ended');
+                                clearInterval(checkInterval);
+                            }
+                        }, 500);
+                    }
+                }, gameState.portalCooldownTime);
+            });
+        }
+    };
+}
+
+// Call portal button setup
+setupPortalButton();
 
 // Start the game
 init();

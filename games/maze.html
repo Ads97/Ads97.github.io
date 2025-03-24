@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>✨ Maze of the Triwizard Champion ✨</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Tutorial Popup */
+        #tutorial-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 500px;
+            max-height: 85vh;
+            background-color: rgba(27, 94, 32, 0.9);
+            border: 3px solid #ffca28;
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(255, 202, 40, 0.4);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            #tutorial-popup {
+                padding: 15px;
+                width: 90%;
+                max-height: 80vh;
+            }
+            #tutorial-popup h2 {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+            #tutorial-popup p, #tutorial-popup li {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+            #tutorial-popup .controls-section {
+                padding: 8px;
+                margin: 8px 0;
+            }
+            #tutorial-close {
+                padding: 8px 16px;
+                font-size: 15px;
+            }
+        }
+        #tutorial-popup h2 {
+            color: #ffca28;
+            text-align: center;
+            margin-top: 0;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        #tutorial-popup p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        #tutorial-popup .controls-section {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        #tutorial-popup ul {
+            padding-left: 25px;
+        }
+        #tutorial-popup li {
+            margin-bottom: 5px;
+        }
+        #tutorial-close {
+            background-color: #ffca28;
+            color: #1b5e20;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0;
+            transition: all 0.2s ease;
+        }
+        #tutorial-close:hover {
+            background-color: #ffd54f;
+            transform: scale(1.05);
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+        #win-popup {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 24px;
+            z-index: 1000;
+        }
+        #portal-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        #portal-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        
+        /* Portal confirmation dialog styles */
+        #portal-confirmation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 20px;
+            z-index: 1001;
+        }
+        
+        .portal-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        
+        #portal-yes, #portal-no {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        #portal-yes {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        #portal-no {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        #portal-yes:hover, #portal-no:hover {
+            transform: scale(1.05);
+        }
+        #level-message {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #ffca28;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            opacity: 0;
+            z-index: 50;
+            text-align: center;
+            transition: opacity 1s ease-in-out;
+            box-shadow: 0 0 15px rgba(255, 202, 40, 0.3);
+        }
+        /* Mobile controls styling */
+        #mobile-controls {
+            position: fixed;
+            bottom: 80px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 10;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        #joystick-zone {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        @media (min-width: 768px) {
+            /* Hide mobile controls on larger screens */
+            #mobile-controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="win-popup">
+            <div>🏆 Level 2 Complete! 🏆</div>
+            <p>This trophy is actually a port key!</p>
+            <button id="portal-button">Return to GameJam Portal</button>
+        </div>
+        <div id="level-message">Level 1 (Tutorial)</div>
+        
+        <!-- Portal Confirmation Dialog -->
+        <div id="portal-confirmation" style="display: none;">
+            <h2>Return to Previous Game?</h2>
+            <p>Do you want to return to the previous game?</p>
+            <div class="portal-buttons">
+                <button id="portal-no">No</button>
+                <button id="portal-yes">Yes</button>
+            </div>
+        </div>
+        
+        <!-- Tutorial Popup -->
+        <div id="tutorial-popup">
+            <h2>Welcome, Brave Champion!</h2>
+            <p>You find yourself at the entrance of a mysterious magical maze. As a selected contestant in this ancient trial, your quest is to navigate through the enchanted hedges and claim the glowing trophy at the center.</p>
+            
+            <div class="controls-section">
+                <p><strong>How to Navigate:</strong></p>
+                <ul>
+                    <li><strong>Desktop:</strong> Use arrow keys (↑ to move forward, ↓ to move backward, ← → to turn)</li>
+                    <li><strong>Mobile:</strong> Use the on-screen joystick at the bottom of the screen to move and turn</li>
+                </ul>
+            </div>
+            
+            <p>Be careful! The maze's walls are enchanted and cannot be passed through. The mystical trophy awaits the first champion brave enough to reach it.</p>
+            <p>Good luck on your quest! The wizarding community watches with anticipation.</p>
+            
+            <button id="tutorial-close">Begin Challenge</button>
+        </div>
+        
+        <!-- Mobile joystick control -->
+        <div id="mobile-controls">
+            <div id="joystick-zone"></div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.1/dist/nipplejs.min.js"></script>
+    <!-- Load config system first so it's available to all other scripts -->
+    <script src="config.js"></script>
+    <!-- Load AudioManager before other game scripts -->
+    <script src="audio.js"></script>
+    <script src="game.js"></script>
+    <script src="level2.js"></script>
+    
+    <!-- Hackathon Badge -->
+    <a target="_blank" href="https://jam.pieter.com" style="font-family: 'system-ui', sans-serif; position: fixed; bottom: -1px; right: -1px; padding: 7px; font-size: 14px; font-weight: bold; background: #fff; color: #000; text-decoration: none; z-index: 10; border-top-left-radius: 12px; z-index: 10000; border: 1px solid #fff;">🕹️ Vibe Jam 2025</a>
+</body>
+</html>
