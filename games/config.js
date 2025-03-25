@@ -30,6 +30,15 @@ window.CONFIG = {
     UI: {
         GAME_OVER_FADE_TIME: 500,
         MESSAGE_DISPLAY_TIME: 4000
+    },
+    
+    // Mobile settings
+    MOBILE: {
+        AUTO_MOVE_SPEED: 0.1,        // Speed for auto-movement (slightly slower than manual)
+        ROTATION_ANGLE: Math.PI/2,   // 90 degrees rotation for swipes
+        ROTATION_DURATION: 300,      // Time to complete rotation in milliseconds
+        SWIPE_THRESHOLD: 50,         // Minimum distance for swipe detection
+        HOLD_DURATION: 500           // Milliseconds to hold for pause
     }
 };
 
@@ -38,7 +47,7 @@ window.LEVEL1 = {
     NAME: 'Level 1 (Tutorial)', // Level name including tutorial designation
     SKY_COLOR: '#87CEEB',
     PLAYER_START: { x: 0, y: 0, z: 15 },
-    CUP_POSITION: { x: 15, y: 0.6, z: -15 },
+    CUP_POSITION: { x: 20, y: 0.6, z: -8.5 },
     
     // Return portal settings
     PORTAL: {
@@ -46,6 +55,12 @@ window.LEVEL1 = {
         SIZE: 2.0,                       // Much larger visual size
         COLLISION_SIZE: 2,             // Larger collision area
         COLOR: '#FF00FF'                 // Bright magenta color for better visibility
+    },
+    
+    // Hazards
+    SPIKES: {
+        CYCLE: 3000,         // Complete cycle time in milliseconds (3 seconds)
+        ACTIVE_TIME: 1500    // How long spikes stay up (1.5 seconds)
     }
 };
 

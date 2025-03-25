@@ -47,10 +47,11 @@ let maze = {
     clock: new THREE.Clock() // Clock for animations
 };
 let keys = {              // Track key presses
-    up: false,
-    down: false,
-    left: false,
-    right: false
+    isStopped: false,    // Whether player movement is paused (S key)
+    isRotating: false,   // Whether player is currently in a rotation animation
+    targetRotation: null, // Target angle for smooth rotation
+    rotationStartTime: null, // When rotation started
+    rotationStartAngle: null // Starting angle for interpolation
 };
 // Note: Audio is now managed by AudioManager in audio.js
 // This is kept for backward compatibility
@@ -135,7 +136,7 @@ function createMaze(level = 1) {
         // Create the Triwizard Cup for level 1
         createTriwizardCup();
     } else if (level === 2) {
-        // Load level 2 from external file
+        // Load the original level 2 from external file
         loadLevel2(scene, maze, player, showLevelMessage);
     }
 }
@@ -177,50 +178,28 @@ function clearMaze() {
 // Create Level 1 maze
 function createLevel1Maze(wallMaterial) {
     // Create maze walls (simple straight path with walls on both sides)
-    const wallGeometry = new THREE.BoxGeometry(1, 3, 35); // Extended length to connect with back wall
     
     // Left wall
-    const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
-    leftWall.position.set(-3, 1.5, 0.5); // Adjusted position to fill gap
-    scene.add(leftWall);
-    maze.walls.push({
-        mesh: leftWall,
-        min: new THREE.Vector3(-3.5, 0, -10.5),
-        max: new THREE.Vector3(-2.5, 3, 17.5)
-    });
+    createWall(1, 3, 35, -3, 1.5, 0.5, wallMaterial); // Long wall on the left side
     
     // Right wall
-    const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
-    rightWall.position.set(3, 1.5, 0.5); // Adjusted position to fill gap
-    scene.add(rightWall);
-    maze.walls.push({
-        mesh: rightWall,
-        min: new THREE.Vector3(2.5, 0, -10.5),
-        max: new THREE.Vector3(3.5, 3, 17.5)
-    });
+    createWall(1, 3, 23, 3, 1.5, 6.0, wallMaterial); // Long wall on the right side
     
     // Back wall (to prevent player from going backwards)
-    const backWallGeometry = new THREE.BoxGeometry(7, 3, 1);
-    const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
-    backWall.position.set(0, 1.5, 18); // Position it just behind the player's starting point
-    scene.add(backWall);
-    maze.walls.push({
-        mesh: backWall,
-        min: new THREE.Vector3(-3.5, 0, 17.5),
-        max: new THREE.Vector3(3.5, 3, 18.5)
-    });
+    createWall(7, 3, 1, 0, 1.5, 18, wallMaterial); // Wall behind player's starting point
     
-    // Add end wall (behind the trophy)
-    const endWallGeometry = new THREE.BoxGeometry(7, 3, 1);
-    const endWall = new THREE.Mesh(endWallGeometry, wallMaterial);
-    endWall.position.set(0, 1.5, -11); // Position it just behind the trophy
-    scene.add(endWall);
-    maze.walls.push({
-        mesh: endWall,
-        min: new THREE.Vector3(-3.5, 0, -11.5),
-        max: new THREE.Vector3(3.5, 3, -10.5)
-    });
+    // Add left turn wall
+    createWall(40, 3, 1, 5, 1.5, -11, wallMaterial); 
+
+    // Add left turn wall 2
+    createWall(20, 3, 1, 12.5, 1.5, -6, wallMaterial); 
+
+    // wall behind trophy
+    createWall(1, 3, 5, 23, 1.5, -8.5, wallMaterial); // Long wall on the right side
     
+    // Add spike trap in level 1 path
+    createSpikes(1, 3, 5, 17, 1.5, -8.5);
+
     // Create return portal if URL parameters indicate it should be shown
     if (gameState.hasPortal) {
         createReturnPortal();
@@ -246,6 +225,114 @@ function createWall(width, height, depth, x, y, z, material) {
     });
     
     return wall;
+}
+
+// Helper function to create spike trap
+function createSpikes(width, height, depth, x, y, z) {
+    // Create a group to hold all the spike objects
+    const spikeGroup = new THREE.Group();
+    spikeGroup.position.set(x, y, z);
+    scene.add(spikeGroup);
+    
+    // Create spike base
+    const baseGeometry = new THREE.BoxGeometry(width, 0.1, depth);
+    const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x4A4A4A }); // Dark gray base
+    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+    base.position.set(0, -1.5, 0); // Position just below floor level
+    spikeGroup.add(base);
+    
+    // Create individual spikes
+    const spikeMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x8B0000,  // Dark red
+        metalness: 0.8,
+        roughness: 0.2
+    });
+    
+    // Calculate number of spikes based on area
+    const spikeSpacing = 1.0;
+    const spikesPerRow = Math.max(2, Math.floor(depth / spikeSpacing));
+    const spikesPerCol = Math.max(2, Math.floor(width / spikeSpacing));
+    
+    // Create spike meshes
+    const spikes = [];
+    const spikeHeight = 1;
+    
+    for (let i = 0; i < spikesPerRow; i++) {
+        for (let j = 0; j < spikesPerCol; j++) {
+            // Create pyramid geometry for each spike
+            const spikeGeometry = new THREE.ConeGeometry(0.2, spikeHeight, 4);
+            const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+            
+            // Position spikes evenly
+            const xPos = (j - spikesPerCol/2 + 0.5) * spikeSpacing;
+            const zPos = (i - spikesPerRow/2 + 0.5) * spikeSpacing;
+            
+            spike.position.set(xPos, -2.5, zPos); // Start fully hidden below the floor
+            // No rotation needed - cones point up by default
+            
+            spikeGroup.add(spike);
+            spikes.push(spike);
+        }
+    }
+    
+    // Store spike data for collision detection
+    maze.spikeTrap = {
+        position: new THREE.Vector3(x, y, z),
+        width: width,
+        depth: depth,
+        active: false,
+        lastCycleTime: Date.now(),
+        spikes: spikes,
+        spikeHeight: spikeHeight,
+        group: spikeGroup,
+        update: function() {
+            const currentTime = Date.now();
+            const timeSinceLastCycle = currentTime - this.lastCycleTime;
+            
+            // Determine if spikes should be active based on cycle time
+            if (timeSinceLastCycle % LEVEL1.SPIKES.CYCLE < LEVEL1.SPIKES.ACTIVE_TIME) {
+                // Spikes should be active (up)
+                if (!this.active) {
+                    this.active = true;
+                    
+                    // Move spikes up so they extend above the floor
+                    this.spikes.forEach(spike => {
+                        spike.position.y = -1.0; // Extend the spikes above the floor level
+                    });
+                    console.log('SPIKES: Extended above floor');
+                }
+            } else {
+                // Spikes should be inactive (down)
+                if (this.active) {
+                    this.active = false;
+                    
+                    // Move spikes down instantly for now
+                    this.spikes.forEach(spike => {
+                        spike.position.y = -3.0; // Move spike fully below floor
+                    });
+                }
+            }
+            
+            // Start a new cycle if needed
+            if (timeSinceLastCycle >= LEVEL1.SPIKES.CYCLE) {
+                this.lastCycleTime = currentTime - (timeSinceLastCycle % LEVEL1.SPIKES.CYCLE);
+            }
+        },
+        checkCollision: function(playerPosition) {
+            // Only check collision if spikes are active
+            if (!this.active) return false;
+            
+            // Calculate horizontal distance (ignoring height)
+            const dx = Math.abs(playerPosition.x - this.position.x);
+            const dz = Math.abs(playerPosition.z - this.position.z);
+            
+            // Check if player is within the spike area
+            const isWithinX = dx < this.width / 2;
+            const isWithinZ = dz < this.depth / 2;
+            
+            return isWithinX && isWithinZ;
+        }
+    };
 }
 
 // Create the Triwizard Cup for Level 1
@@ -315,8 +402,8 @@ function createTriwizardCup() {
         initialPositions: [...positions]
     });
     
-    // Position the cup for level 1
-    cupGroup.position.set(0, 0.6, -9);
+    // Position the cup using Level 1 configuration
+    cupGroup.position.copy(LEVEL1.CUP_POSITION);
     
     maze.cup = cupGroup;
     scene.add(cupGroup);
@@ -337,22 +424,46 @@ function onWindowResize() {
 
 // Handle keydown events
 function handleKeyDown(event) {
-    switch (event.key) {
-        case 'ArrowUp':
-            keys.up = true;
-            break;
-        case 'ArrowDown':
-            keys.down = true;
-            break;
-        case 'ArrowLeft':
-            keys.left = true;
-            break;
-        case 'ArrowRight':
-            keys.right = true;
+    // For Alt+S debug level skip
+    if (event.altKey && event.key.toLowerCase() === 's') {
+        // Debug skip to next level with Alt+S
+        if (!gameState.isTransitioning && gameState.currentLevel < gameState.maxLevel) {
+            console.log('Debug: Skipping to next level');
+            skipToNextLevel();
+        } else if (gameState.currentLevel >= gameState.maxLevel) {
+            console.log('Debug: Already at max level');
+        }
+        return; // Exit early
+    }
+    
+    // Regular movement controls
+    switch (event.key.toLowerCase()) {
+        case 'a':
+            // Only start rotation if not already rotating
+            if (!keys.isRotating) {
+                // Rotate left (counter-clockwise) - positive angle
+                keys.isRotating = true;
+                keys.rotationStartTime = Date.now();
+                keys.rotationStartAngle = player.rotation;
+                keys.targetRotation = player.rotation + Math.PI/2; // 90 degrees
+            }
             break;
         case 'd':
-        case 'D':
-            // Toggle debug view
+            // Only start rotation if not already rotating
+            if (!keys.isRotating) {
+                // Rotate right (clockwise) - negative angle
+                keys.isRotating = true;
+                keys.rotationStartTime = Date.now();
+                keys.rotationStartAngle = player.rotation;
+                keys.targetRotation = player.rotation - Math.PI/2; // 90 degrees
+            }
+            break;
+        case 's':
+            // S key stops movement (like touching the screen on mobile)
+            keys.isStopped = true;
+            break;
+        case 'm':
+            // M key toggles debug view
             isDebugView = !isDebugView;
             console.log('Debug view:', isDebugView ? 'ON' : 'OFF');
             
@@ -362,125 +473,158 @@ function handleKeyDown(event) {
                 debugCamera.lookAt(player.position.x, 0, player.position.z);
             }
             break;
-        case 's':
-        case 'S':
-            // Debug skip to next level
-            if (!gameState.isTransitioning && gameState.currentLevel < gameState.maxLevel) {
-                console.log('Debug: Skipping to next level');
-                skipToNextLevel();
-            } else if (gameState.currentLevel >= gameState.maxLevel) {
-                console.log('Debug: Already at max level');
-            }
-            break;
     }
 }
 
 // Handle keyup events
 function handleKeyUp(event) {
-    switch (event.key) {
-        case 'ArrowUp':
-            keys.up = false;
-            break;
-        case 'ArrowDown':
-            keys.down = false;
-            break;
-        case 'ArrowLeft':
-            keys.left = false;
-            break;
-        case 'ArrowRight':
-            keys.right = false;
-            break;
+    // We only need to handle S key release for auto-movement
+    if (event.key.toLowerCase() === 's') {
+        keys.isStopped = false;
     }
 }
 
-// Set up mobile joystick controls
+// Mobile-specific variables
+let isMobile = false;
+let isAutoMoving = false;
+let isTouching = false;
+let isRotating = false;
+let touchStartTime = 0;
+let touchStartX = 0;
+let touchStartY = 0;
+let holdTimer = null;
+let targetRotation = null;
+let rotationStartTime = null;
+let rotationStartAngle = null;
+let lastHoldTime = 0;
+let holdProcessed = false;
+
+// Set up mobile gesture controls
 function setupMobileControls() {
-    // Only setup joystick on touch devices
+    // Only setup mobile controls on touch devices
     if (!('ontouchstart' in window)) return;
     
-    // Check if nipplejs is loaded (try both possible names)
-    if (typeof window.nipplejs === 'undefined' && typeof window.nipple === 'undefined') {
-        console.error('nipplejs library not loaded. Mobile controls will be disabled.');
-        return;
-    }
+    // Set mobile detection flag
+    isMobile = true;
     
-    // Get the nipplejs object (different libraries might expose it differently)
-    const nippleJS = window.nipplejs || window.nipple;
+    // Get control elements
+    const gestureArea = document.getElementById('mobile-gesture-area');
+    const mobileStatus = document.getElementById('mobile-status');
+    const mobileControls = document.getElementById('mobile-controls');
     
-    const joystickOptions = {
-        zone: document.getElementById('joystick-zone'),
-        mode: 'static',
-        position: { left: '50%', bottom: '0' },
-        color: 'rgba(255, 255, 255, 0.5)',  // Subtle white color
-        size: 120,
-        restOpacity: 0.5,          // Semi-transparent when not in use
-        fadeTime: 100,
-        lockX: false,              // Allow both X and Y movement
-        lockY: false,
-        catchDistance: 100          // More forgiving catch distance
-    };
+    // Show mobile controls
+    mobileControls.style.display = 'block';
+    mobileStatus.style.display = 'block';
     
-    // Create the joystick
-    const manager = nippleJS.create(joystickOptions);
+    // Enable auto-movement by default
+    isAutoMoving = true;
     
-    // Handle joystick movement
-    manager.on('move', function(evt, data) {
-        if (data.angle) {
-            const angle = data.angle.radian;
-            const distance = data.distance || 0;
+    // Touch start - detect hold and initialize swipe
+    gestureArea.addEventListener('touchstart', function(e) {
+        e.preventDefault(); // Prevent default behaviors
+        
+        // Record touch start time and position for swipe detection
+        touchStartTime = Date.now();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isTouching = true;
+        
+        // Pause auto-movement when touching
+        isAutoMoving = false;
+        updateMobileStatus(mobileStatus);
+        
+        // Make sure any previous timer is cleared
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+        }
+        
+        // We no longer need the hold timer for toggling movement
+        // as we'll always resume movement when touch ends
+    });
+    
+    // Touch move - detect swipes
+    gestureArea.addEventListener('touchmove', function(e) {
+        e.preventDefault(); // Prevent scrolling
+        
+        if (!isTouching || isRotating) return;
+        
+        // If we've moved significantly, clear the hold timer
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+        
+        if (distance > 10) { // Small threshold to differentiate between hold and swipe
+            clearTimeout(holdTimer);
+        }
+        
+        // Check for horizontal swipe
+        if (Math.abs(dx) > CONFIG.MOBILE.SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+            // Clear the hold timer
+            clearTimeout(holdTimer);
             
-            // Minimum distance threshold to do anything
-            const minThreshold = 20;
+            // Start rotation
+            isRotating = true;
+            rotationStartTime = Date.now();
+            rotationStartAngle = player.rotation;
             
-            // Clear all keys first
-            keys.up = false;
-            keys.down = false;
-            keys.left = false;
-            keys.right = false;
-            
-            if (distance >= minThreshold) {
-                // Very narrow angle ranges for forward/backward movement
-                // Forward - strict south position (around 0.5π)
-                if (angle > Math.PI * 0.45 && angle < Math.PI * 0.55) {
-                    keys.up = true;     // Move forward
-                } 
-                // Backward - strict north position (around 1.5π)
-                else if (angle > Math.PI * 1.45 && angle < Math.PI * 1.55) {
-                    keys.down = true;    // Move backward
-                }
-                // Any other angle = rotation
-                else {
-                    // Use the vector data from the joystick (more reliable than angle)
-                    const vector = data.vector || {};
-                    
-                    // Left/right based on x component of the vector
-                    if (vector.x < 0) {
-                        // Negative x = left side of joystick
-                        keys.left = true;   // Turn left
-                    } else {
-                        // Positive x = right side of joystick 
-                        keys.right = true;  // Turn right
-                    }
-                }
+            if (dx > 0) {
+                // Swipe right - rotate right (clockwise) - negative angle in our system
+                targetRotation = rotationStartAngle - CONFIG.MOBILE.ROTATION_ANGLE;
+                mobileStatus.textContent = 'Rotating Right';
+            } else {
+                // Swipe left - rotate left (counter-clockwise) - positive angle in our system
+                targetRotation = rotationStartAngle + CONFIG.MOBILE.ROTATION_ANGLE;
+                mobileStatus.textContent = 'Rotating Left';
             }
+            
+            // Show the status briefly
+            mobileStatus.style.opacity = '1';
         }
     });
     
-    // Reset all keys when joystick is released
-    manager.on('end', function() {
-        keys.up = false;
-        keys.down = false;
-        keys.left = false;
-        keys.right = false;
+    // Touch end - clean up
+    gestureArea.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        isTouching = false;
+        
+        // Clear any active timers
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+        
+        // ALWAYS resume auto-movement when touch ends
+        isAutoMoving = true;
+        
+        // Update status immediately and fade out
+        updateMobileStatus(mobileStatus);
+        setTimeout(() => {
+            if (!isTouching) {
+                updateMobileStatus(mobileStatus, 0.7);
+            }
+        }, 1000);
     });
     
-    // Handle any errors or joystick being destroyed
-    manager.on('destroyed', function() {
-        keys.up = false;
-        keys.down = false;
-        keys.left = false;
-        keys.right = false;
-    });
+    // Double tap handler removed
+    
+    // Update status with the global function
+    // Function has been moved to global scope
+}
+
+// Helper function to update mobile status display
+function updateMobileStatus(statusElement, opacity = 1) {
+    if (!statusElement) return;
+    
+    if (isTouching) {
+        statusElement.textContent = 'Holding - Release to Move';
+        statusElement.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+    } else if (isRotating) {
+        // Keep existing rotating messages
+    } else {
+        statusElement.textContent = 'Auto-Moving (Touch to Stop)';
+        statusElement.style.backgroundColor = 'rgba(0, 128, 0, 0.5)';
+    }
+    statusElement.style.opacity = opacity.toString();
 }
 
 // Check if player has reached the Triwizard Cup
@@ -663,6 +807,35 @@ function showLevelMessage(level = 1) {
     }, 2000);
 }
 
+// Show game message with fade effect
+function showMessage(message, color = '#ffffff', duration = 3000) {
+    const gameMessage = document.getElementById('game-message');
+    
+    // Set message content and color
+    gameMessage.innerText = message;
+    gameMessage.style.color = color;
+    
+    // For important messages, add a border
+    if (color === '#ff4444' || color === '#ffca28') {
+        gameMessage.style.border = `2px solid ${color}`;
+    } else {
+        gameMessage.style.border = 'none';
+    }
+    
+    // Show the message
+    gameMessage.style.opacity = '1';
+    
+    // Clear any existing timeout
+    if (window.messageTimeout) {
+        clearTimeout(window.messageTimeout);
+    }
+    
+    // Fade out after the specified duration
+    window.messageTimeout = setTimeout(() => {
+        gameMessage.style.opacity = '0';
+    }, duration);
+}
+
 // Check collisions with maze walls
 function checkCollisions(newPosition) {
     // Simple AABB collision detection
@@ -699,22 +872,55 @@ function checkCollisions(newPosition) {
 function updatePlayer() {
     if (!player.canMove) return;
     
-    // Rotate player
-    if (keys.left) {
-        player.rotation += player.turnSpeed;
-    }
-    if (keys.right) {
-        player.rotation -= player.turnSpeed;
+    // Handle smooth rotation for both mobile and desktop
+    if ((isMobile && isRotating && targetRotation !== null) || (!isMobile && keys.isRotating)) {
+        // Get the correct variables based on device
+        const rotationStartTimeValue = isMobile ? rotationStartTime : keys.rotationStartTime;
+        const rotationStartAngleValue = isMobile ? rotationStartAngle : keys.rotationStartAngle;
+        const targetRotationValue = isMobile ? targetRotation : keys.targetRotation;
+        const duration = CONFIG.MOBILE.ROTATION_DURATION;
+        
+        // Calculate elapsed time since rotation started
+        const elapsed = Date.now() - rotationStartTimeValue;
+        
+        // Calculate interpolation factor
+        let t = Math.min(elapsed / duration, 1.0);
+        
+        // Apply smooth interpolation (ease in-out)
+        t = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        
+        // Interpolate rotation
+        player.rotation = rotationStartAngleValue + (targetRotationValue - rotationStartAngleValue) * t;
+        
+        // Check if rotation is complete
+        if (elapsed >= duration) {
+            player.rotation = targetRotationValue;
+            
+            // Reset rotation flags for the appropriate device
+            if (isMobile) {
+                isRotating = false;
+                targetRotation = null;
+            } else {
+                keys.isRotating = false;
+                keys.targetRotation = null;
+            }
+        }
     }
     
-    // Move player forward/backward
-    if (keys.up || keys.down) {
-        // Determine direction (forward or backward)
-        const directionMultiplier = keys.up ? 1 : -1;
+    // Auto-movement for mobile (when not touching) or desktop (when not pressing S)
+    // Also handle rotation state
+    const shouldMove = (isMobile && !isTouching && !isRotating) || 
+                      (!isMobile && !keys.isStopped && !keys.isRotating);
+    
+    // Handle player movement
+    if (shouldMove) {
+        // Determine speed based on device
+        let moveSpeed = isMobile ? CONFIG.MOBILE.AUTO_MOVE_SPEED : player.speed;
+        let directionMultiplier = 1; // Always forward by default
         
         // Calculate movement vector (negative for forward because of coordinate system)
-        const moveX = -Math.sin(player.rotation) * player.speed * directionMultiplier;
-        const moveZ = -Math.cos(player.rotation) * player.speed * directionMultiplier;
+        const moveX = -Math.sin(player.rotation) * moveSpeed * directionMultiplier;
+        const moveZ = -Math.cos(player.rotation) * moveSpeed * directionMultiplier;
         
         // Calculate new position
         const newPosition = new THREE.Vector3(
@@ -727,6 +933,27 @@ function updatePlayer() {
         const collision = checkCollisions(newPosition);
         if (!collision) {
             player.position.copy(newPosition);
+        } else if (isMobile && !isTouching) {
+            // If we hit a wall, stop auto-movement momentarily
+            isAutoMoving = false;
+            
+            // Update status indicator with collision message
+            const mobileStatus = document.getElementById('mobile-status');
+            if (mobileStatus) {
+                mobileStatus.textContent = 'Blocked - Swipe Left/Right to Turn';
+                mobileStatus.style.backgroundColor = 'rgba(255, 165, 0, 0.5)';
+                mobileStatus.style.opacity = '1';
+            }
+            
+            // Restart auto-movement after a short delay
+            setTimeout(() => {
+                isAutoMoving = true;
+                
+                // Update status indicator
+                if (mobileStatus) {
+                    updateMobileStatus(mobileStatus, 0.7);
+                }
+            }, 1500);
         }
     }
     
@@ -776,6 +1003,95 @@ function animate() {
             cupLight.intensity = 0.5 + pulseFactor * 0.8;
         }
     }
+    
+    // Tutorial zones for Level 1
+    if (gameState.currentLevel === 1) {
+        // Define the tutorial zone for the left turn - area leading up to the turn
+        const turnTutorialZone = {
+            minX: 0,
+            maxX: 3,
+            minZ: 0,
+            maxZ: 5
+        };
+        
+        // Check if player is in the turn tutorial zone
+        if (player.position.x >= turnTutorialZone.minX && 
+            player.position.x <= turnTutorialZone.maxX &&
+            player.position.z >= turnTutorialZone.minZ && 
+            player.position.z <= turnTutorialZone.maxZ && 
+            !maze.hasShownTurnTutorial) {
+            
+            // Show the tutorial message about turning
+            const controlText = isMobile ? "swipe left or right" : "press A (left) or D (right)";
+            showMessage(`You'll need to turn soon! To rotate, ${controlText}.`, '#ffca28', 5000);
+            
+            // Set flag so we only show this once
+            maze.hasShownTurnTutorial = true;
+        }
+        
+        // Define the tutorial zone for spikes - area leading up to the spikes
+        const spikeTutorialZone = {
+            minX: 10,
+            maxX: 14,
+            minZ: -10,
+            maxZ: -7
+        };
+        
+        // Check if player is in the spike tutorial zone
+        if (player.position.x >= spikeTutorialZone.minX && 
+            player.position.x <= spikeTutorialZone.maxX &&
+            player.position.z >= spikeTutorialZone.minZ && 
+            player.position.z <= spikeTutorialZone.maxZ && 
+            !maze.hasShownSpikeTutorial) {
+            
+            // Show the tutorial message about stopping
+            const controlText = isMobile ? "tap and hold the screen" : "hold the S key";
+            showMessage(`Dangerous spikes ahead! To stop moving, ${controlText}.`, '#ffca28', 5000);
+            
+            // Set flag so we only show this once
+            maze.hasShownSpikeTutorial = true;
+        }
+        
+        // Update spikes in level 1
+        if (maze.spikeTrap) {
+            maze.spikeTrap.update();
+            
+            // Check for player collision with spikes
+            if (maze.spikeTrap.checkCollision(player.position) && player.canMove) {
+                // Player has stepped on active spikes
+                console.log('Player hit spikes!');
+                
+                // Play sound effect if available
+                if (window.audioManager && window.audioManager.soundEffects.hurt) {
+                    window.audioManager.playSoundEffect('hurt');
+                }
+                
+                // Disable player movement temporarily
+                player.canMove = false;
+                
+                // Show death popup
+                const deathPopup = document.getElementById('death-popup');
+                deathPopup.style.display = 'block';
+                
+                // Wait 2 seconds before hiding popup and resetting player
+                setTimeout(() => {
+                    // Hide popup
+                    deathPopup.style.display = 'none';
+                    
+                    // Reset player to starting position
+                    player.position = new THREE.Vector3(0, 0, 10);
+                    player.rotation = 0;
+                    player.canMove = true;
+                    
+                    // Show message
+                    showMessage('Watch out for the spikes!', '#ff4444');
+                }, 2000);
+            }
+        }
+    }
+    
+    // Update debug information for mobile testing
+    // Mobile debug info removed
     
     updatePlayer();
     
