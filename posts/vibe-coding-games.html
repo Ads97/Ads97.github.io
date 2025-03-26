@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vibe coding a hackathon</title>
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/simple-blog-template.css" rel="stylesheet">
+
+    <!-- Open Graph Metadata -->
+    <meta property="og:title" content="Vibe Coding a game with Claude 3.7: What's good, What's bad and some tips">
+    <meta property="og:description" content="Vibe Coding a game with Claude 3.7: What's good, What's bad and some tips">
+    <meta property="og:image" content="../images/game_gif.gif">
+    <meta property="og:url" content="https://advaithsridhar.blog/posts/vibe-coding-games.html">
+    <meta property="og:type" content="website">
+    <meta property="og:image:alt" content="preview of a maze game">
+
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Vibe Coding a game with Claude 3.7: What's good, What's bad and some tips">
+    <meta name="twitter:description" content="My experience building a ThreeJS game with Claude and WindSurf">
+    <meta name="twitter:image" content="../images/game_gif.gif">  
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">Home</a>
+        </div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="../about.html">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+          <h1 class="post-title">Vibe Coding a game with Claude: What's Good, What's Bad and some tips</h1>
+          <hr>
+          <p><span class="glyphicon glyphicon-time"></span> Posted on 2025-03-25</p>
+          <hr>
+          <img src="../images/game_gif.gif" alt="level 1 gameplay" class="img-responsive">
+          <h3 class="text-center">Play the game <a href="https://advaithsridhar.blog/games/maze.html">here</a>!</h3>
+          <br>
+          <hr>
+          <p>Over this weekend, levelsio hosted a "vibe coding" gaming hackathon (<a href="https://x.com/levelsio/status/1901660771505021314">link</a></sup>). </p>
+          <img src="../images/vibe-coding-tweet.png" alt="Screenshot of levelsio vibe coding gamejam tweet" class="img-responsive">
+          <p>The rules were simple:</p>
+          <ol>
+            <li>Atleast 80% of code to be written by AI. (For my game, Claude wrote more than 99% of it)</li>
+            <li>Has to use ThreeJS (which I'd never heard of before)</li>
+          </ol>
+          <p>A hackathon seemed like the perfect way to try out vibe coding, because no AI-written slop would enter a production codebase. I'd also seen some promising results from this <a href="https://github.com/vnglst/when-ai-fails/blob/main/shepards-dog/README.md">repo</a>, and I was curious to see how far I would get. </p>
+          <p>Anyway, so here was my plan:</p>
+          <ol>
+            <li>Make as many games as possible (hey I'm not the one coding anyway)</li>
+            <li>Submit the most fun one.</li> 
+          </ol>
+          <p>Well, about ~10 hours of vibing later, here's my thoughts on vibe coding:</p>
+          <h1>The Good</h1>
+          <ol>
+            <li>First off, the speed at which you can get started is just awesome. I had a fully functional game (with minimal level design) that I could play on my phone within my first 30 minutes of vibe coding. It felt almost like magic.</li>
+            <li>Similarly, I had a significantly more complex level 2 (with monsters, speed boosts, trapdoors and spikes) with the first 4 hours.</li>
+            <li>Claude is impressively good at debugging and working in a loop with you to solve problems. </li>
+          </ol>
+          <h1>The Bad</h1>
+          <ol>
+            <li>Figuring out which features are easy to build and which ones are hard is unintuitive. I noticed that some simple things would take a long time (such as adding audio), whereas other things that I would have considered hard happened super fast (such as complex particle graphics for a monster).</li>
+            <li>Claude (understandably) needs help with placing things - it cant see the game, and therefore its positions for walls, spikes etc are way off. It can do simple things (like place 2 straight walls parallel to each other), but anything more than that needs to be done by a human. I suppose this could be solved by giving it screenshots of the game, but its not hard to go in and fix this stuff yourself.</li>
+          </ol>
+          <h1>The ugly</h1>
+          Here's a breakdown of how I spent my time over the hackathon:
+          <ol>
+            <li>First 30 minutes: Level 1</li>
+            <li>Next 3 hours: Level 2 with significantly more features</li>
+            <li>Next 6 hours: Refactoring levels 1 and 2 to try and add level 3. (unsuccessfully)</li>
+          </ol>
+          <p>The real, major problem with vibe coding is that LLMs are pretty bad at writing production-ready code. For example, if there are 3 different ways to kill a player and restart the game, it will write 3 duplicate versions of restart logic in each of those 3 places - rather than creating a single reusable function to handle the restart. Additionally, the generated code often contains "magic numbers" scattered throughout, instead of defining parameters—such as player speed—as constants and consistently referencing those constants. This causes an explosion of bugs as you add features and your codebase expands in size. This is despite Claude knowing about every software design principle on the planet and recognizing that its not following them. Attempts to refactor code send the model into long loops of rewriting code, and breaks most game functionality in the process. </p>
+
+          <p>This was the single most frustrating part of the whole process, and prevented me from taking the game any further. However for what it's worth, I don't think this problem is unsolvable for LLMs, and I expect we'll see them get much better at this in future updates.</p>
+
+          <h1>Tips for other vibe coders</h1>
+          If you're interested in giving vibe coding a try after all this, here's a list of some prompting strategies that helped me quite a bit:
+          <ol>
+            <li><b>Start small: </b> I initially started by giving Claude a detailed description of the game in all its complexity - all the devices to support, a complicated layout maps, detailed gameplay etc. Claude tried to one-shot the whole thing and generated something absolutely unusable - I had to delete the codebase and start over. Starting small and adding features one at a time is a much more effective strategy</li>
+            <li><b>Extensively test after each feature: </b>As noted earlier, Claude's terrible at code re-use, abstraction and isolating responsibilities. A consequence of this is that changes to one part of the game (such as a new obstacle) may unintuitively break other parts of the game. Every single feature addition to the game should be followed by an extensive round of testing, or you'll have insidious bugs everywhere (this is also what slows down development so much later on)</li>
+            <li><b>Ask Claude to add a lot of logging: </b>Claude is surprisingly good at diagnosing and fixing issues if it has a clear log of what happened. Asking it to add logging and telling it which ones were printed can fix a lot of issues. Interestingly, the model's terrible at removing logging messages afterwards - I had to explicitly go remove them myself later on. </li>
+            <li><b>Build debugging features: </b>Add features to help you debug - after all, adding features is easy(ish) with AI! As an example, I added a magic key (M) which let me view the maze from a top view - allowing me to easily see what the layout looked like and what needed to be moved. Similarly, I had keys for skipping levels and for moving my character to various points (thereby saving me time while testing)</li>
+            <li><b>Periodically tell Claude to reduce tech debt: </b> Claude's pretty bad at refactoring and reusability, but nudging it to do so every few messages can help to some extent.</li>
+          </ol>
+          <p>Lastly, I want to note that Windsurf has some handy tools for vibe coding - they allow you to revert the codebase to any point in your conversation with Claude (thereby undoing buggy stuff), and also automatically apply linting in order to correct syntax errors from Claude. Would definitely recommend using them if you're giving vibe coding a try, it can really help!</p>
+          <hr>
+          <p>Overall Im both impressed by what's already possible with AI, and skeptical about the use of vibe coding on serious projects today. Excited to see what progress is unlocked by the next wave of models!</p>
+          
+          <!-- Blog Comments -->
+          <script src="https://utteranc.es/client.js"
+            repo="Ads97/Ads97.github.io"
+            issue-term="linguistics-questions"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+          </script>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/jquery.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script>
+      // On expand: switch to down chevron
+      $('.panel-collapse').on('show.bs.collapse', function () {
+        $(this).parent().find('.glyphicon-chevron-right')
+               .removeClass('glyphicon-chevron-right')
+               .addClass('glyphicon-chevron-down');
+      });
+    
+      // On collapse: switch back to right chevron
+      $('.panel-collapse').on('hide.bs.collapse', function () {
+        $(this).parent().find('.glyphicon-chevron-down')
+               .removeClass('glyphicon-chevron-down')
+               .addClass('glyphicon-chevron-right');
+      });
+    </script>
+  </body>
+</html>
