@@ -1,6 +1,12 @@
 {
   "posts": [
     {
+      "title": "Vibe Coding a game with Claude: What's Good, What's Bad and some tips",
+      "date": "2025-03-25",
+      "filename": "vibe-coding-games.html",
+      "excerpt": "What I learnt from building a maze runner game with claude"
+    },
+    {
       "title": "Linguistics - A test to measure AI intelligence",
       "date": "2024-12-25",
       "filename": "linguistics-test-for-agi.html",
