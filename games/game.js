@@ -33,8 +33,8 @@ let gameState = {
 };
 let player = {
     height: 1.8,          // Player height in units
-    speed: 0.1,           // Player movement speed
-    turnSpeed: 0.015,     // Reduced player rotation speed for smoother joystick control
+    speed: 0.07,          // Player movement speed (set to exactly 0.07)
+    turnSpeed: 0.03,      // Player rotation speed adjusted for better control
     position: new THREE.Vector3(0, 0, 10), // Start position
     rotation: 0,          // Current rotation angle
     canMove: true         // Whether player can move
@@ -461,6 +461,18 @@ function handleKeyDown(event) {
         case 's':
             // S key stops movement (like touching the screen on mobile)
             keys.isStopped = true;
+            break;
+        case '2':
+            // Key 2 loads level 3 (identical to level 1)
+            if (!gameState.isTransitioning) {
+                console.log('Loading Level 3 (identical to Level 1)');
+                // Clear the current level
+                clearMaze();
+                // Load Level 3
+                initLevel3(scene, maze, player, showLevelMessage);
+                // Update game state
+                gameState.currentLevel = 3;
+            }
             break;
         case 'm':
             // M key toggles debug view

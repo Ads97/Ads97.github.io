@@ -14,8 +14,8 @@ window.CONFIG = {
     
     // Player settings
     PLAYER: {
-        DEFAULT_SPEED: 0.15,
-        ROTATION_SPEED: 0.05,
+        DEFAULT_SPEED: 0.07, // Set to exactly 0.07
+        ROTATION_SPEED: 0.09, // Adjusted for better control
         COLLISION_RADIUS: 0.5
     },
     
@@ -34,9 +34,9 @@ window.CONFIG = {
     
     // Mobile settings
     MOBILE: {
-        AUTO_MOVE_SPEED: 0.1,        // Speed for auto-movement (slightly slower than manual)
+        AUTO_MOVE_SPEED: 0.07,       // Set to exactly 0.07
         ROTATION_ANGLE: Math.PI/2,   // 90 degrees rotation for swipes
-        ROTATION_DURATION: 300,      // Time to complete rotation in milliseconds
+        ROTATION_DURATION: 260,      // Adjusted for better responsiveness
         SWIPE_THRESHOLD: 50,         // Minimum distance for swipe detection
         HOLD_DURATION: 500           // Milliseconds to hold for pause
     }
