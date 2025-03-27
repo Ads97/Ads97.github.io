@@ -37,7 +37,7 @@ let player = {
     turnSpeed: 0.03,      // Player rotation speed adjusted for better control
     position: new THREE.Vector3(0, 0, 10), // Start position
     rotation: 0,          // Current rotation angle
-    canMove: true         // Whether player can move
+    canMove: false        // Player cannot move initially until tutorial is dismissed
 };
 let maze = {
     walls: [],            // Array to store wall objects for collision
@@ -60,11 +60,19 @@ let audio = {};
 
 // Initialize the game
 function init() {
+    console.log('[DEBUG] Game initialization starting, player.canMove =', player.canMove);
+    
     // Initialize the audio system
     window.audioManager.init();
     
+    // Make sure player movement is disabled initially
+    player.canMove = false;
+    console.log('[DEBUG] Set player.canMove to false in init:', player.canMove);
+    
     // Setup tutorial popup
     setupTutorial();
+    
+    console.log('[DEBUG] After setupTutorial, player.canMove =', player.canMove);
     
     // Create scene
     scene = new THREE.Scene();
@@ -882,7 +890,20 @@ function checkCollisions(newPosition) {
 
 // Update player movement and camera
 function updatePlayer() {
-    if (!player.canMove) return;
+    console.log('[DEBUG] updatePlayer called, player.canMove =', player.canMove);
+    
+    // Check if tutorial is visible - if so, prevent movement regardless of player.canMove
+    const tutorialVisible = document.getElementById('tutorial-popup')?.style.display !== 'none';
+    if (tutorialVisible) {
+        console.log('[DEBUG] Player movement blocked: tutorial is still visible');
+        return;
+    }
+    
+    // Also check player.canMove flag as a backup
+    if (!player.canMove) {
+        console.log('[DEBUG] Player movement blocked: player.canMove is false');
+        return;
+    }
     
     // Handle smooth rotation for both mobile and desktop
     if ((isMobile && isRotating && targetRotation !== null) || (!isMobile && keys.isRotating)) {
@@ -924,8 +945,19 @@ function updatePlayer() {
     const shouldMove = (isMobile && !isTouching && !isRotating) || 
                       (!isMobile && !keys.isStopped && !keys.isRotating);
     
+    console.log('[DEBUG] Movement conditions:', {
+        playerCanMove: player.canMove,
+        shouldMove: shouldMove,
+        isMobile: isMobile,
+        isTouching: isTouching,
+        isRotating: isRotating,
+        isStopped: keys.isStopped,
+        keysIsRotating: keys.isRotating
+    });
+    
     // Handle player movement
     if (shouldMove) {
+        console.log('[DEBUG] Player is moving, position =', player.position);
         // Determine speed based on device
         let moveSpeed = isMobile ? CONFIG.MOBILE.AUTO_MOVE_SPEED : player.speed;
         let directionMultiplier = 1; // Always forward by default
@@ -1002,6 +1034,11 @@ function updatePlayer() {
 function animate() {
     requestAnimationFrame(animate);
     const deltaTime = maze.clock.getDelta();
+    
+    // Debug tracking for the animation loop
+    console.log('[DEBUG] Animation loop running, tutorial visible =', 
+        document.getElementById('tutorial-popup')?.style.display !== 'none', 
+        'player.canMove =', player.canMove);
     
     // Update particles
     updateParticles(deltaTime);
@@ -1105,7 +1142,13 @@ function animate() {
     // Update debug information for mobile testing
     // Mobile debug info removed
     
+    console.log('[DEBUG] BEFORE updatePlayer() - player.canMove =', player.canMove,
+              'tutorial visible =', document.getElementById('tutorial-popup')?.style.display !== 'none',
+              'hasSeenTutorial =', localStorage.getItem('hasSeenMazeTutorial'));
+              
     updatePlayer();
+    
+    console.log('[DEBUG] AFTER updatePlayer() - player position =', player.position);
     
     // Update monster if we're in level 2 and the update function exists
     if (gameState.currentLevel === 2 && typeof window.updateMonsterLevel2 === 'function') {
@@ -1185,37 +1228,62 @@ window.resetBackgroundMusicSpeed = function() {
 
 // Setup tutorial popup
 function setupTutorial() {
+    console.log('[DEBUG] Starting setupTutorial function');
     const tutorialPopup = document.getElementById('tutorial-popup');
     const closeButton = document.getElementById('tutorial-close');
     
     // Check if user has seen tutorial before
     const hasSeenTutorial = localStorage.getItem('hasSeenMazeTutorial');
+    console.log('[DEBUG] hasSeenTutorial =', hasSeenTutorial, 'player.canMove =', player.canMove);
     
     // Show tutorial if first visit
     if (!hasSeenTutorial) {
+        console.log('[DEBUG] First visit - showing tutorial popup, disabling player movement');
         tutorialPopup.style.display = 'block';
+        
+        // Double-check that player movement is disabled
+        player.canMove = false;
+        console.log('[DEBUG] Set player.canMove to false:', player.canMove);
         
         // Pause game while tutorial is open (optional)
         if (maze.controls) {
             maze.controls.enabled = false;
         }
     } else {
+        console.log('[DEBUG] Returning player - hiding tutorial, enabling movement');
         tutorialPopup.style.display = 'none';
+        // Enable player movement immediately if tutorial was previously seen
+        player.canMove = true;
+        console.log('[DEBUG] Set player.canMove to true for returning player:', player.canMove);
         // Show level message immediately if tutorial was previously seen
         showLevelMessage(gameState.currentLevel);
     }
     
     // Close tutorial when button is clicked
     closeButton.addEventListener('click', () => {
+        console.log('[DEBUG] Tutorial close button clicked');
+        console.log('[DEBUG] BEFORE closing - player.canMove =', player.canMove);
+        
         tutorialPopup.style.display = 'none';
+        console.log('[DEBUG] Tutorial popup hidden');
         
         // Save that user has seen tutorial
         localStorage.setItem('hasSeenMazeTutorial', 'true');
+        console.log('[DEBUG] hasSeenMazeTutorial set in localStorage');
         
         // Enable controls
         if (maze.controls) {
             maze.controls.enabled = true;
+            console.log('[DEBUG] maze.controls enabled');
         }
+        
+        // Enable player movement
+        player.canMove = true;
+        console.log('[DEBUG] Player movement enabled after tutorial dismissed:', player.canMove);
+        
+        // Force player to stay in place until the next animation frame
+        const currentPosition = new THREE.Vector3().copy(player.position);
+        console.log('[DEBUG] Saved current position:', currentPosition);
         
         // Show level message after tutorial closes
         showLevelMessage(gameState.currentLevel);
@@ -1224,6 +1292,8 @@ function setupTutorial() {
         if (audio.backgroundMusic) {
             audio.backgroundMusic.play().catch(e => console.log('Audio play failed:', e));
         }
+        
+        console.log('[DEBUG] AFTER tutorial closing complete - player.canMove =', player.canMove);
     });
 }
 
