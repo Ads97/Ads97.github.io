@@ -36,16 +36,16 @@
   <header>
     <div class="logo"><strong>DealBench</strong></div>
     <nav>
-      <a href="https://github.com/Ads97/DealBench">Github</a>
       <a href="#about">About</a>
+      <a href="https://github.com/Ads97/DealBench">Github</a>
       <!-- additional links -->
     </nav>
   </header>
 
   <section class="hero">
-    <h1>LLMs Play Monopoly Deal</h1>
+    <h1>An AI Research Benchmark inspired by Monopoly Deal<sup>*</sup></h1>
     <p>Testing strategy and improvisation in frontier models.</p>
-    <p><span style="font-size: 0.7em; color: #666;">Open-source research preview, non-commercial use only</span></p>
+    <!-- <p><span style="font-size: 0.7em; color: #666;">Open-source research preview, non-commercial use only</span></p> -->
     <a class="btn" href="https://github.com/Ads97/DealBench">Github</a>
   </section>
 
@@ -80,7 +80,7 @@
     <hr style="border:0;border-top:1px solid #ddd;margin:2rem 0;">
 
     <h3>Key Observations</h3>
-    <p>claude made a lot of incorrect moves, doesnt support structured outputs. As an example, it kept trying to collect rent using the opponent's properties, instead of its own. Open source models like deepseek-r1, qwen3-235b did not understand the output enough to be able to play. Performance better than the random move bot shows that just the ability to play valid moves is not enough to win</p>
+    <p>claude made a lot of incorrect moves, doesnt support structured outputs. As an example, it kept trying to collect rent using the opponent's properties, instead of its own. Open source models like deepseek-r1, qwen3-235b did not understand the output enough to be able to play. Qwen thought for 17k tokens on the first turn before errorring out. Format consistency is also a problem. Deepseek stops emitting reasoning if structured outputs is enabled. Performance better than the random move bot shows that just the ability to play valid moves is not enough to win</p>
 
     <hr style="border:0;border-top:1px solid #ddd;margin:2rem 0;">
 
@@ -100,6 +100,8 @@
 
     <h3>Example prompt</h3>
     <p>Example prompt goes here.</p>
+
+    <sub>*This project implements a simulation based on the publicly known rules of Monopoly Deal. Monopoly Deal and Monopoly are registered trademarks of Hasbro, Inc. This project is not affiliated with, endorsed by, or associated with Hasbro in any way.</sub>
   </section>
 
   <footer>
